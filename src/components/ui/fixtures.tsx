@@ -9,6 +9,8 @@ import type { Match } from "@/lib/scoring"
 
 interface FixturesProps extends React.HTMLAttributes<HTMLDivElement> {
   matches: Match[]
+  // how many upcoming fixtures to show (live ones are always shown on top)
+  limit?: number
   // only show matches where at least one team is owned in the sweepstake
   ownedOnly?: boolean
 }
@@ -34,16 +36,11 @@ function statusBadge(m: Match) {
         LIVE
       </span>
     )
-  if (FINISHED.has(m.status))
-    return (
-      <span className="text-muted-foreground rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold">
-        FT
-      </span>
-    )
   return (
     <span className="text-muted-foreground text-[11px]">
       {m.utcDate
         ? new Date(m.utcDate).toLocaleString(undefined, {
+            weekday: "short",
             month: "short",
             day: "numeric",
             hour: "2-digit",
@@ -54,55 +51,39 @@ function statusBadge(m: Match) {
   )
 }
 
-function TeamRow({
-  team,
-  score,
-  win,
-}: {
-  team: string
-  score: number | null
-  win: boolean
-}) {
+function TeamRow({ team, score }: { team: string; score: number | null }) {
   const owner = ownerName(team)
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="min-w-0">
-        <p className={cn("truncate text-sm", win ? "font-semibold" : "font-medium")}>
-          {team}
-        </p>
+        <p className="truncate text-sm font-medium">{team}</p>
         <p className="text-muted-foreground truncate text-[11px]">
           {owner ? owner : <span className="opacity-50">unowned</span>}
         </p>
       </div>
       {score != null && (
-        <span className={cn("text-sm tabular-nums", win ? "font-bold" : "font-medium")}>
-          {score}
-        </span>
+        <span className="text-sm font-medium tabular-nums">{score}</span>
       )}
     </div>
   )
 }
 
 const Fixtures = React.forwardRef<HTMLDivElement, FixturesProps>(
-  ({ className, matches, ownedOnly = true, ...props }, ref) => {
+  ({ className, matches, limit = 4, ownedOnly = true, ...props }, ref) => {
     const list = ownedOnly
       ? matches.filter((m) => ownerName(m.homeTeam) || ownerName(m.awayTeam))
       : matches
 
-    // group by stage, preserve a sensible stage order
-    const order = Object.keys(STAGE_LABELS)
-    const byStage = new Map<string, Match[]>()
-    for (const m of list) {
-      const arr = byStage.get(m.stage) ?? []
-      arr.push(m)
-      byStage.set(m.stage, arr)
-    }
-    const stages = [...byStage.keys()].sort(
-      (a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99)
-    )
-    for (const s of stages) {
-      byStage.get(s)!.sort((a, b) => (a.utcDate ?? "").localeCompare(b.utcDate ?? ""))
-    }
+    const byDate = (a: Match, b: Match) =>
+      (a.utcDate ?? "").localeCompare(b.utcDate ?? "")
+
+    const live = list.filter((m) => LIVE.has(m.status)).sort(byDate)
+    const upcoming = list
+      .filter((m) => !LIVE.has(m.status) && !FINISHED.has(m.status))
+      .sort(byDate)
+      .slice(0, limit)
+
+    const shown = [...live, ...upcoming]
 
     return (
       <div
@@ -110,44 +91,35 @@ const Fixtures = React.forwardRef<HTMLDivElement, FixturesProps>(
         className={cn("bg-card rounded-2xl border p-6 shadow-sm", className)}
         {...props}
       >
-        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-          <CalendarDays className="size-5" /> Fixtures
-        </h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="flex items-center gap-2 text-lg font-semibold">
+            <CalendarDays className="size-5" /> Upcoming
+          </h3>
+          {upcoming.length > 0 && (
+            <span className="text-muted-foreground text-xs">
+              next {upcoming.length}
+            </span>
+          )}
+        </div>
 
-        {list.length === 0 ? (
+        {shown.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            No fixtures yet — they'll appear here once the draw / schedule is published.
+            No upcoming fixtures — schedule not published yet.
           </p>
         ) : (
-          <div className="space-y-6">
-            {stages.map((stage) => (
-              <div key={stage}>
-                <p className="text-muted-foreground mb-2 text-xs font-semibold uppercase tracking-wide">
-                  {STAGE_LABELS[stage] ?? stage}
-                </p>
-                <div className="space-y-2">
-                  {byStage.get(stage)!.map((m) => {
-                    const homeWin =
-                      m.homeScore != null &&
-                      m.awayScore != null &&
-                      m.homeScore > m.awayScore
-                    const awayWin =
-                      m.homeScore != null &&
-                      m.awayScore != null &&
-                      m.awayScore > m.homeScore
-                    return (
-                      <div key={m.id} className="rounded-xl border p-3">
-                        <div className="mb-2 flex items-center justify-end">
-                          {statusBadge(m)}
-                        </div>
-                        <div className="space-y-1.5">
-                          <TeamRow team={m.homeTeam} score={m.homeScore} win={homeWin} />
-                          <div className="border-t" />
-                          <TeamRow team={m.awayTeam} score={m.awayScore} win={awayWin} />
-                        </div>
-                      </div>
-                    )
-                  })}
+          <div className="space-y-2">
+            {shown.map((m) => (
+              <div key={m.id} className="rounded-xl border p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wide">
+                    {STAGE_LABELS[m.stage] ?? m.stage}
+                  </span>
+                  {statusBadge(m)}
+                </div>
+                <div className="space-y-1.5">
+                  <TeamRow team={m.homeTeam} score={m.homeScore} />
+                  <div className="border-t" />
+                  <TeamRow team={m.awayTeam} score={m.awayScore} />
                 </div>
               </div>
             ))}
