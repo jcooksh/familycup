@@ -34,21 +34,21 @@ const PODIUM_STYLES: Record<
 > = {
   1: {
     order: "order-2",
-    height: "h-28",
+    height: "min-h-32",
     ring: "ring-amber-400",
     badge: "bg-amber-400 text-amber-950",
     medal: "🥇",
   },
   2: {
     order: "order-1",
-    height: "h-20",
+    height: "min-h-28",
     ring: "ring-slate-300",
     badge: "bg-slate-300 text-slate-800",
     medal: "🥈",
   },
   3: {
     order: "order-3",
-    height: "h-16",
+    height: "min-h-24",
     ring: "ring-orange-400",
     badge: "bg-orange-400 text-orange-950",
     medal: "🥉",
@@ -103,7 +103,7 @@ const LeaderboardPodium = React.forwardRef<HTMLDivElement, LeaderboardPodiumProp
               )}
               <div
                 className={cn(
-                  "bg-muted mt-2 flex w-full flex-col items-center justify-start rounded-t-lg pt-2",
+                  "bg-muted mt-2 flex w-full flex-col items-center justify-start gap-0.5 rounded-t-lg px-1 py-2",
                   style.height
                 )}
               >
