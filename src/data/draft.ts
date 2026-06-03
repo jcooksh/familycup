@@ -11,6 +11,7 @@ export const TOURNAMENT = {
   title: "World Cup 2026 Sweepstake",
   fromDate: "2026-06-11",
   toDate: "2026-07-19",
+  host: "USA / CAN / MEX",
 }
 
 export const PARTICIPANTS: Participant[] = [
