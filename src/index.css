@@ -42,6 +42,7 @@
 
 *{box-sizing:border-box;}
 html,body,#root{margin:0;padding:0;min-height:100vh;}
+html,body{overflow-x:hidden;max-width:100%;}
 body{
   background:var(--bg);
   color:var(--text);
@@ -94,7 +95,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;}
 .who .rank{font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);letter-spacing:0.05em;text-transform:uppercase;}
 
 /* ── TOPBAR + MAIN ── */
-.main{display:flex;flex-direction:column;min-width:0;}
+.main{display:flex;flex-direction:column;min-width:0;overflow-x:hidden;}
 .topbar{height:var(--topbar-h);display:flex;align-items:center;gap:18px;padding:0 28px;border-bottom:1px solid var(--border);background:rgba(7,9,15,0.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;}
 .topbar h1{font-family:var(--font-display);font-size:28px;font-weight:400;line-height:1;letter-spacing:0.04em;text-transform:uppercase;margin:0;}
 .topbar .sub{color:var(--text-3);font-size:12px;font-family:var(--font-mono);letter-spacing:0.12em;text-transform:uppercase;margin-left:8px;}
@@ -343,7 +344,8 @@ label.field .l{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em
   .topbar .btn{padding:8px 10px;}
   .live-pulse{font-size:9px;letter-spacing:0.1em;padding:6px 9px;}
 
-  .section-title{font-size:26px;}
+  .section-title{font-size:24px;overflow-wrap:anywhere;}
+  .topbar h1,.card-head h2,.podium-card .nm,.hero-team .nm,.player-card .nm,.team-card .nm{overflow-wrap:anywhere;}
   .statstrip{grid-template-columns:1fr;}
   .statstrip .stat .v{font-size:38px;}
   .podium-row{grid-template-columns:1fr;}
