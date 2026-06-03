@@ -20,6 +20,7 @@ export const TEAM_ALIASES: Record<string, string> = {
   "Bosnia and Herzegovina": "Bosnia",
   "Bosnia-Herzegovina": "Bosnia",
   "Cabo Verde": "Cape Verde",
+  "Cape Verde Islands": "Cape Verde",
   "DR Congo": "Congo",
   "Congo DR": "Congo",
   "Saudi Arabia": "Saudi Arabia",
