@@ -111,8 +111,6 @@ const LeaderboardCard = React.forwardRef<HTMLDivElement, LeaderboardCardProps>(
         <LeaderboardRankings
           rankings={rankings}
           currentUserId={currentUserId}
-          showPagination
-          defaultPageSize={10}
         />
       </div>
     )

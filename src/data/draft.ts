@@ -31,3 +31,12 @@ export const PARTICIPANTS: Participant[] = [
 export const TEAM_OWNER: Record<string, string> = Object.fromEntries(
   PARTICIPANTS.flatMap((p) => p.teams.map((t) => [t, p.id]))
 )
+
+// Map team name -> owning participant display name.
+export const TEAM_OWNER_NAME: Record<string, string> = Object.fromEntries(
+  PARTICIPANTS.flatMap((p) => p.teams.map((t) => [t, p.name]))
+)
+
+export function ownerName(team: string): string | undefined {
+  return TEAM_OWNER_NAME[team]
+}

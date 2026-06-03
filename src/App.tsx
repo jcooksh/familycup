@@ -2,6 +2,7 @@ import * as React from "react"
 import { Trophy, RefreshCw, Users } from "lucide-react"
 
 import { LeaderboardCard } from "@/components/ui/leaderboard-card"
+import { Fixtures } from "@/components/ui/fixtures"
 import { computeStandings, type Match, type Standing } from "@/lib/scoring"
 import { TOURNAMENT, PARTICIPANTS } from "@/data/draft"
 
@@ -114,6 +115,8 @@ export default function App() {
         podiumRankings={podiumRankings}
         rankings={rankings}
       />
+
+      <Fixtures matches={matches} />
 
       <section className="bg-card rounded-2xl border p-6 shadow-sm">
         <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
