@@ -12,7 +12,7 @@ import {
 } from "@/pages"
 
 const POLL_MS = 60_000
-const ME = "jake"
+const ME = "" // no "current user" — nobody is highlighted as YOU
 
 interface MatchesFile {
   updatedAt?: string | null
@@ -118,7 +118,6 @@ export default function App() {
   }, [matches, updatedAt, load])
 
   const liveCount = data.totals.live
-  const meRank = data.standings.findIndex((s) => s.participant.id === ME) + 1
 
   const nav = (
     key: RouteKey,
@@ -185,10 +184,10 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="avatar">JC</div>
+          <div className="avatar">W</div>
           <div className="who">
-            <div className="me">Jake</div>
-            <div className="rank">RANK · {meRank || "–"} / {PARTICIPANTS.length}</div>
+            <div className="me">Sweepstake</div>
+            <div className="rank">{PARTICIPANTS.length} PLAYERS · WC 26</div>
           </div>
         </div>
       </aside>

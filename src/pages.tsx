@@ -57,8 +57,8 @@ export function StandingsPage({ d }: { d: PageData }) {
   const top3 = standings.slice(0, 3)
   const totalPts = standings.reduce((a, s) => a + s.points, 0)
   const totalGoals = standings.reduce((a, s) => a + s.gf, 0)
-  const mePos = standings.findIndex((s) => s.participant.id === me) + 1
   const inKo = standings.filter((s) => koByParticipant[s.participant.id] > 0).length
+  const leader = standings[0]
 
   return (
     <>
@@ -79,9 +79,9 @@ export function StandingsPage({ d }: { d: PageData }) {
           <div className="meta">{totals.live > 0 ? "matches in play" : "no games kicked off"}</div>
         </div>
         <div className="stat">
-          <div className="lbl">Your position</div>
-          <div className="v">#{mePos || "–"}<span className="unit">of {PARTICIPANTS.length}</span></div>
-          <div className="meta">{standings.find((s) => s.participant.id === me)?.points ?? 0} pts</div>
+          <div className="lbl">Current leader</div>
+          <div className="v" style={{ fontSize: 30 }}>{leader?.participant.name ?? "–"}</div>
+          <div className="meta">{leader?.points ?? 0} pts · GD {gdStr(leader?.gd ?? 0)}</div>
         </div>
       </div>
 
