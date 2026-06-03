@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 import { PARTICIPANTS, TEAM_OWNER, TEAM_OWNER_NAME, TOURNAMENT } from "@/data/draft"
 import { flagOf, initialsOf } from "@/data/flags"
 import { POINTS, type Match, type Standing } from "@/lib/scoring"
@@ -19,6 +21,8 @@ export interface PageData {
 }
 
 const TOTAL_MATCHES = 104
+const TEAM_OWNER_NAME_BY_ID: Record<string, string> =
+  Object.fromEntries(PARTICIPANTS.map((p) => [p.id, p.name]))
 const ownerName = (team: string): string | undefined => TEAM_OWNER_NAME[team]
 const ownerId = (team: string): string | undefined => TEAM_OWNER[team]
 const gdStr = (gd: number) => `${gd >= 0 ? "+" : ""}${gd}`
@@ -535,8 +539,10 @@ function TeamCardView({ t, me }: { t: TeamRow; me: string }) {
 /* ============================================================ TEAMS */
 export function TeamsPage({ d }: { d: PageData }) {
   const { teamRows, me, totals } = d
+  const [owner, setOwner] = useState<string>("all")
   const stageSortKey = (t: TeamRow) => (t.live ? 0 : STAGE_RANK[t.stage] > 0 ? 1 : 2)
-  const rows = [...teamRows].sort((a, b) => stageSortKey(a) - stageSortKey(b) || b.points - a.points || a.team.localeCompare(b.team))
+  const sorted = [...teamRows].sort((a, b) => stageSortKey(a) - stageSortKey(b) || b.points - a.points || a.team.localeCompare(b.team))
+  const rows = owner === "all" ? sorted : sorted.filter((t) => ownerId(t.team) === owner)
   const inKo = teamRows.filter((t) => STAGE_RANK[t.stage] > 0).length
   const liveTeams = teamRows.filter((t) => t.live).length
 
@@ -551,8 +557,16 @@ export function TeamsPage({ d }: { d: PageData }) {
 
       <div className="card">
         <div className="card-head">
-          <h2>All 48 Teams</h2>
-          <span className="eyebrow">live first · then points contributed</span>
+          <h2>{owner === "all" ? "All 48 Teams" : `${TEAM_OWNER_NAME_BY_ID[owner]}'s Teams`}</h2>
+          <span className="eyebrow">{rows.length} shown · live first</span>
+        </div>
+        <div className="filter-row">
+          <button className={`chip ${owner === "all" ? "lime" : ""}`} onClick={() => setOwner("all")}>All owners</button>
+          {PARTICIPANTS.map((p) => (
+            <button key={p.id} className={`chip ${owner === p.id ? "lime" : ""}`} onClick={() => setOwner(p.id)}>
+              {p.name}
+            </button>
+          ))}
         </div>
         <div className="card-body">
           <div className="team-grid">
