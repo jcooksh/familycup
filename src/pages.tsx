@@ -182,9 +182,9 @@ function MatchRow({ m, me }: { m: Match; me: string }) {
       <div className={`vs ${fin || live ? "score" : ""}`}>
         {fin || live ? <>{m.homeScore ?? 0}<span style={{ color: "var(--text-4)" }}> – </span>{m.awayScore ?? 0}</> : "vs"}
       </div>
-      <div className="team-side away">
+      <div className="team-side">
         <div className="flag-lg">{flagOf(m.awayTeam)}</div>
-        <div style={{ textAlign: "right" }}>
+        <div>
           <div className="team-name">{m.awayTeam}</div>
           <div className={`owner ${ownerId(m.awayTeam) === me ? "you" : ""}`}>{ao ? `↳ ${ao}` : "—"}</div>
         </div>

@@ -192,7 +192,6 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;}
 .match-row .when .big{font-family:var(--font-display);font-size:18px;color:var(--text);letter-spacing:0.04em;display:block;}
 .match-row.live .when .big{color:var(--live);}
 .match-row .team-side{display:flex;align-items:center;gap:10px;}
-.match-row .team-side.away{justify-content:flex-end;flex-direction:row-reverse;}
 .match-row .team-name{font-weight:600;font-size:15px;}
 .match-row .owner{font-size:11px;color:var(--text-3);font-family:var(--font-mono);letter-spacing:0.06em;}
 .match-row .owner.you{color:var(--lime);}

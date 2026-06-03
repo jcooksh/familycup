@@ -1,5 +1,8 @@
 # World Cup 2026 Sweepstake Tracker
 
+**🔗 Live: http://cuptrack.ext.io/**
+
+
 Live leaderboard for a World Cup sweepstake. Each participant owns a handful of
 national teams; the app pulls real match results and ranks everyone by points.
 
