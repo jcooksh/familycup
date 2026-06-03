@@ -10,6 +10,7 @@ import {
   PlayersPage, TeamsPage, StatsPage, RulesPage, AdminPage,
   type PageData,
 } from "@/pages"
+import { DankFx, playAirhorn, playOof } from "@/dank"
 
 const POLL_MS = 60_000
 const ME = "" // no "current user" — nobody is highlighted as YOU
@@ -68,6 +69,30 @@ export default function App() {
   const [loading, setLoading] = React.useState(true)
   const [{ route, param }, setNav] = React.useState(parseHash())
   const [navOpen, setNavOpen] = React.useState(false)
+
+  // ── ULTRA MEGA DANK MODE (triple-click bottom-right corner) ──
+  const [dank, setDank] = React.useState(() => localStorage.getItem("dank") === "1")
+  const [dankBanner, setDankBanner] = React.useState(false)
+  const clickTimes = React.useRef<number[]>([])
+
+  React.useEffect(() => {
+    document.body.classList.toggle("dank", dank)
+    localStorage.setItem("dank", dank ? "1" : "0")
+  }, [dank])
+
+  const cornerClick = () => {
+    const now = Date.now()
+    clickTimes.current = [...clickTimes.current, now].filter((t) => now - t < 700)
+    if (clickTimes.current.length >= 3) {
+      clickTimes.current = []
+      setDank((on) => {
+        const next = !on
+        if (next) { playAirhorn(); setDankBanner(true); setTimeout(() => setDankBanner(false), 1800) }
+        else playOof()
+        return next
+      })
+    }
+  }
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -213,6 +238,11 @@ export default function App() {
 
         <div className="content">{PAGES[route]}</div>
       </main>
+
+      {/* secret dank-mode trigger — triple-click me */}
+      <div className="dank-corner" onClick={cornerClick} aria-hidden />
+      {dank && <DankFx />}
+      {dankBanner && <div className="dank-banner">420<br />DANK MODE<br />ENABLED</div>}
     </div>
   )
 }

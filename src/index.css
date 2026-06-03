@@ -330,6 +330,52 @@ label.field .l{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em
   .team-grid{grid-template-columns:repeat(2,1fr);}
   .player-grid{grid-template-columns:1fr;}
 }
+/* ============================================================
+   ULTRA MEGA DANK MODE 🔥🌿💯
+   ============================================================ */
+.dank-corner{position:fixed;right:0;bottom:0;width:90px;height:90px;z-index:60;}
+
+body.dank{
+  --bg:#001400;--bg-2:#001f00;--surface:#03260a;--surface-2:#064d12;--surface-3:#0a6e1a;
+  --border:#13a52b;--border-soft:#0a5c18;
+  --text:#c6ff8f;--text-2:#9bff5c;--text-3:#5fd631;--text-4:#3a8a1e;
+  --lime:#39ff14;--lime-2:#22d100;--lime-glow:rgba(57,255,20,0.4);
+  --live:#39ff14;--live-glow:rgba(57,255,20,0.4);--win:#39ff14;--draw:#a8ff00;
+  --gold:#39ff14;--silver:#9bff5c;--bronze:#5fd631;
+}
+body.dank,
+body.dank *{
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='42'%3E%3Ctext y='34' font-size='34'%3E%F0%9F%98%8E%3C/text%3E%3C/svg%3E") 8 8, auto;
+}
+body.dank .app{animation:dankhue 8s linear infinite;}
+@keyframes dankhue{0%{filter:hue-rotate(0deg) saturate(1.4);}50%{filter:hue-rotate(40deg) saturate(1.8);}100%{filter:hue-rotate(0deg) saturate(1.4);}}
+body.dank .card,body.dank .statstrip .stat,body.dank .podium-card,body.dank .player-card,body.dank .team-card{
+  box-shadow:0 0 14px rgba(57,255,20,0.3);border-color:var(--lime);
+}
+body.dank .brand-mark{animation:dankspin 1.5s linear infinite;box-shadow:0 0 16px var(--lime);}
+@keyframes dankspin{to{transform:rotate(360deg);}}
+body.dank .section-title,body.dank .topbar h1,body.dank .pts-cell,body.dank .pts-big,body.dank .podium-card .pts{text-shadow:0 0 14px var(--lime);}
+body.dank .live-pulse{animation:dankflash 0.6s steps(2) infinite;}
+@keyframes dankflash{50%{background:var(--lime);color:#000;}}
+
+.dank-fx{position:fixed;inset:0;pointer-events:none;z-index:55;overflow:hidden;}
+.dank-emoji{position:absolute;top:-50px;animation-name:dankfall;animation-timing-function:linear;animation-iteration-count:infinite;}
+@keyframes dankfall{to{transform:translateY(112vh) rotate(540deg);}}
+
+.dank-banner{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:var(--font-display);font-size:64px;line-height:0.95;text-align:center;
+  color:#39ff14;text-shadow:0 0 24px #39ff14,0 0 48px #39ff14;
+  text-transform:uppercase;letter-spacing:0.04em;z-index:70;pointer-events:none;
+  animation:dankbanner 1.8s ease-out forwards;
+}
+@keyframes dankbanner{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.2) rotate(-12deg);}
+  25%{opacity:1;transform:translate(-50%,-50%) scale(1.15) rotate(4deg);}
+  70%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0deg);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.5);}
+}
+
 .scrim{display:none;}
 @media (max-width:880px){.scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:25;}}
 
