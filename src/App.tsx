@@ -56,16 +56,17 @@ function Ico({ d }: { d: React.ReactNode }) {
   )
 }
 
-function routeFromHash(): RouteKey {
-  const h = location.hash.replace(/^#\/?/, "") as RouteKey
-  return ROUTE_META[h] ? h : "standings"
+function parseHash(): { route: RouteKey; param: string } {
+  const segs = location.hash.replace(/^#\/?/, "").split("/")
+  const route = (ROUTE_META[segs[0] as RouteKey] ? segs[0] : "standings") as RouteKey
+  return { route, param: segs[1] ?? "" }
 }
 
 export default function App() {
   const [matches, setMatches] = React.useState<Match[]>([])
   const [updatedAt, setUpdatedAt] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(true)
-  const [route, setRoute] = React.useState<RouteKey>(routeFromHash())
+  const [{ route, param }, setNav] = React.useState(parseHash())
   const [navOpen, setNavOpen] = React.useState(false)
 
   const load = React.useCallback(async () => {
@@ -90,7 +91,7 @@ export default function App() {
   }, [load])
 
   React.useEffect(() => {
-    const onHash = () => { setRoute(routeFromHash()); setNavOpen(false) }
+    const onHash = () => { setNav(parseHash()); setNavOpen(false) }
     window.addEventListener("hashchange", onHash)
     return () => window.removeEventListener("hashchange", onHash)
   }, [])
@@ -143,7 +144,7 @@ export default function App() {
     matchday: <MatchDayPage d={data} />,
     fixtures: <FixturesPage d={data} />,
     bracket: <BracketPage d={data} />,
-    players: <PlayersPage d={data} />,
+    players: <PlayersPage d={data} playerId={param} />,
     teams: <TeamsPage d={data} />,
     stats: <StatsPage d={data} />,
     rules: <RulesPage d={data} />,

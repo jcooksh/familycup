@@ -382,16 +382,20 @@ export function BracketPage({ d }: { d: PageData }) {
 }
 
 /* ============================================================ PLAYERS */
-export function PlayersPage({ d }: { d: PageData }) {
-  const { standings, me, teamRows } = d
+export function PlayersPage({ d, playerId }: { d: PageData; playerId?: string }) {
+  if (playerId && PARTICIPANTS.some((p) => p.id === playerId)) {
+    return <PlayerDetail d={d} id={playerId} />
+  }
+
+  const { standings, teamRows } = d
   const teamStage = Object.fromEntries(teamRows.map((t) => [t.team, t]))
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", flexWrap: "wrap", gap: 10 }}>
         <div>
           <h2 className="section-title">All Players</h2>
-          <div className="section-sub">{PARTICIPANTS.length} owners · 48 teams · ranked by points</div>
+          <div className="section-sub">{PARTICIPANTS.length} owners · 48 teams · tap a card for detail</div>
         </div>
         <span className="chip">SORT · POINTS</span>
       </div>
@@ -400,7 +404,7 @@ export function PlayersPage({ d }: { d: PageData }) {
         {standings.map((s, i) => {
           const p = s.participant
           return (
-            <div key={p.id} className={`player-card ${p.id === me ? "me" : ""}`}>
+            <a key={p.id} href={`#/players/${p.id}`} className="player-card link">
               <div className="top">
                 <div className="av-lg">{initialsOf(p.name)}</div>
                 <div>
@@ -422,11 +426,109 @@ export function PlayersPage({ d }: { d: PageData }) {
                   )
                 })}
               </div>
-            </div>
+              <div className="view-link">View teams & fixtures →</div>
+            </a>
           )
         })}
       </div>
     </>
+  )
+}
+
+/* ── single player: their teams individually + their fixtures ── */
+function PlayerDetail({ d, id }: { d: PageData; id: string }) {
+  const { standings, teamRows, matches, me, formByParticipant, koByParticipant } = d
+  const idx = standings.findIndex((s) => s.participant.id === id)
+  const s = standings[idx]
+  const p = s.participant
+  const rows = p.teams.map((t) => teamRows.find((r) => r.team === t)!).filter(Boolean)
+  const teamSet = new Set(p.teams)
+  const theirs = matches.filter((m) => teamSet.has(m.homeTeam) || teamSet.has(m.awayTeam))
+  const byDate = (a: Match, b: Match) => (a.utcDate ?? "").localeCompare(b.utcDate ?? "")
+  const live = theirs.filter(isLive).sort(byDate)
+  const upcoming = theirs.filter(isUpcoming).sort(byDate)
+  const results = theirs.filter(isFinished).sort((a, b) => byDate(b, a))
+
+  return (
+    <>
+      <a href="#/players" className="chip" style={{ alignSelf: "flex-start" }}>← All players</a>
+
+      <div className="card">
+        <div className="card-body" style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+          <div className="av-lg" style={{ width: 56, height: 56, fontSize: 20 }}>{initialsOf(p.name)}</div>
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 34, textTransform: "uppercase", letterSpacing: "0.03em", lineHeight: 1 }}>{p.name}</div>
+            <div className="section-sub" style={{ marginTop: 6 }}>
+              rank #{idx + 1} · {p.teams.length} teams · {koByParticipant[id]} in KO
+            </div>
+            <div style={{ marginTop: 10 }}><Wdl form={formByParticipant[id] ?? ""} /></div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 56, color: "var(--lime)", lineHeight: 1 }}>{s.points}<span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-3)", marginLeft: 8 }}>PTS</span></div>
+            <div className="meta" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-3)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 6 }}>{s.won}W · {s.drawn}D · {s.lost}L · GD {gdStr(s.gd)} · GF {s.gf}</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="section-sub" style={{ marginBottom: 14 }}>Their teams</div>
+        <div className="team-grid">
+          {rows.map((t) => <TeamCardView key={t.team} t={t} me={me} />)}
+        </div>
+      </div>
+
+      {live.length > 0 && (
+        <div className="card">
+          <div className="card-head"><h2>Live now</h2><span className="eyebrow">{live.length} in play</span></div>
+          <div className="card-body tight">{live.map((m) => <MatchRow key={m.id} m={m} me={me} />)}</div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-head"><h2>Upcoming matches</h2><span className="eyebrow">{p.name}'s teams</span></div>
+        <div className="card-body tight">
+          {upcoming.length ? upcoming.slice(0, 12).map((m) => <MatchRow key={m.id} m={m} me={me} />)
+            : <div className="empty">No upcoming fixtures</div>}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-head"><h2>Results</h2><span className="eyebrow">finished</span></div>
+        <div className="card-body tight">
+          {results.length ? results.slice(0, 12).map((m) => <MatchRow key={m.id} m={m} me={me} />)
+            : <div className="empty">No results yet</div>}
+        </div>
+      </div>
+    </>
+  )
+}
+
+/* ============================================================ TEAM CARD */
+function TeamCardView({ t, me }: { t: TeamRow; me: string }) {
+  const stageChip = STAGE_RANK[t.stage] > 0
+    ? <span className="chip lime">{STAGE_SHORT[t.stage]}</span>
+    : <span className="chip">GROUP</span>
+  return (
+    <div className="team-card">
+      <div className="top">
+        <div className="flag-md">{flagOf(t.team)}</div>
+        <div style={{ flex: 1 }}>
+          <div className="nm">{t.team}</div>
+          <div className="own">↳ {t.owner}{ownerId(t.team) === me && <span style={{ color: "var(--lime)" }}> (YOU)</span>}</div>
+        </div>
+        {stageChip}
+      </div>
+      <div className="form">
+        {t.form.length ? t.form.slice(-5).map((c, i) =>
+          c === "live" ? <span key={i} className="live">●</span>
+            : <span key={i} className={c === "W" ? "w" : c === "D" ? "d" : "l"}>{c}</span>)
+          : [0, 1, 2].map((i) => <span key={i} className="none">·</span>)}
+      </div>
+      <div className="pts-row">
+        <div><div className="v">{t.points}</div><div className="lbl">Points contributed</div></div>
+        <div className="right">{t.played}P · {t.won}W {t.drawn}D {t.lost}L</div>
+      </div>
+    </div>
   )
 }
 
@@ -454,33 +556,7 @@ export function TeamsPage({ d }: { d: PageData }) {
         </div>
         <div className="card-body">
           <div className="team-grid">
-            {rows.map((t) => {
-              const stageChip = STAGE_RANK[t.stage] > 0
-                ? <span className="chip lime">{STAGE_SHORT[t.stage]}</span>
-                : <span className="chip">GROUP</span>
-              return (
-                <div className="team-card" key={t.team}>
-                  <div className="top">
-                    <div className="flag-md">{flagOf(t.team)}</div>
-                    <div style={{ flex: 1 }}>
-                      <div className="nm">{t.team}</div>
-                      <div className="own">↳ {t.owner}{ownerId(t.team) === me && <span style={{ color: "var(--lime)" }}> (YOU)</span>}</div>
-                    </div>
-                    {stageChip}
-                  </div>
-                  <div className="form">
-                    {t.form.length ? t.form.slice(-5).map((c, i) =>
-                      c === "live" ? <span key={i} className="live">●</span>
-                        : <span key={i} className={c === "W" ? "w" : c === "D" ? "d" : "l"}>{c}</span>)
-                      : [0, 1, 2].map((i) => <span key={i} className="none">·</span>)}
-                  </div>
-                  <div className="pts-row">
-                    <div><div className="v">{t.points}</div><div className="lbl">Points contributed</div></div>
-                    <div className="right">{t.played}P · {t.won}W {t.drawn}D {t.lost}L</div>
-                  </div>
-                </div>
-              )
-            })}
+            {rows.map((t) => <TeamCardView key={t.team} t={t} me={me} />)}
           </div>
         </div>
       </div>
