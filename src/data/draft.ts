@@ -24,7 +24,7 @@ export const PARTICIPANTS: Participant[] = [
   { id: "ashish", name: "Ashish", teams: ["Morocco", "Japan", "Egypt", "Uzbekistan", "Curaçao"] },
   { id: "daniel", name: "Daniel", teams: ["Belgium", "USA", "Ivory Coast", "Czech Republic"] },
   { id: "aonghus", name: "Aonghus", teams: ["Netherlands", "Canada", "Turkey", "Bosnia"] },
-  { id: "oli-harris", name: "Oli Harris", teams: ["Argentina", "Colombia", "Iran", "Panama"] },
+  { id: "oli-harris", name: "Ollie Harris", teams: ["Argentina", "Colombia", "Iran", "Panama"] },
 ]
 
 // Map team name -> owning participant id (built once).
