@@ -333,7 +333,9 @@ label.field .l{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em
 /* ============================================================
    ULTRA MEGA DANK MODE 🔥🌿💯
    ============================================================ */
-.dank-corner{position:fixed;right:0;bottom:0;width:90px;height:90px;z-index:60;}
+.dank-corner{position:fixed;right:0;bottom:0;width:120px;height:120px;z-index:60;}
+.app{transition:filter .3s;}
+.card,.statstrip .stat,.podium-card,.player-card,.team-card{transition:box-shadow .3s, border-color .3s;}
 
 body.dank{
   --bg:#001400;--bg-2:#001f00;--surface:#03260a;--surface-2:#064d12;--surface-3:#0a6e1a;

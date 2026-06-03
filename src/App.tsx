@@ -82,7 +82,7 @@ export default function App() {
 
   const cornerClick = () => {
     const now = Date.now()
-    clickTimes.current = [...clickTimes.current, now].filter((t) => now - t < 700)
+    clickTimes.current = [...clickTimes.current, now].filter((t) => now - t < 900)
     if (clickTimes.current.length >= 3) {
       clickTimes.current = []
       setDank((on) => {
