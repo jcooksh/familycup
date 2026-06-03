@@ -3,9 +3,9 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import path from "node:path"
 
-// base must match the GitHub Pages repo name for asset paths to resolve
+// served at root on the custom domain cuptrack.ext.io
 export default defineConfig({
-  base: process.env.GITHUB_PAGES ? "/wolrdcuptracker/" : "/",
+  base: "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
