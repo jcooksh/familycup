@@ -324,3 +324,53 @@ label.field .l{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em
 }
 .scrim{display:none;}
 @media (max-width:880px){.scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:25;}}
+
+/* layout helpers used by Rules / Stats / Admin */
+.rules-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:32px;}
+.mvp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.draft-row{display:grid;grid-template-columns:38px 150px 1fr;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border-soft);}
+
+/* ── PHONE ── */
+@media (max-width:640px){
+  .content{padding:14px;gap:18px;}
+  .topbar{padding:0 14px;gap:10px;}
+  .topbar h1{font-size:22px;}
+  .topbar .sub{display:none;}
+  .topbar .btn{padding:8px 10px;}
+  .live-pulse{font-size:9px;letter-spacing:0.1em;padding:6px 9px;}
+
+  .section-title{font-size:26px;}
+  .statstrip{grid-template-columns:1fr;}
+  .statstrip .stat .v{font-size:38px;}
+  .podium-row{grid-template-columns:1fr;}
+  .two-col,.rules-grid{grid-template-columns:1fr;gap:16px;}
+  .player-grid,.team-grid,.mvp-grid{grid-template-columns:1fr;}
+  .bracket{grid-template-columns:1fr;}
+
+  /* tables scroll horizontally instead of squashing */
+  .card-body.tight{overflow-x:auto;}
+  .leaderboard{min-width:520px;}
+
+  /* match rows: stack home / away with score between */
+  .match-row{grid-template-columns:1fr;gap:6px;padding:12px 14px;}
+  .match-row .when{order:-1;}
+  .match-row .team-side,.match-row .team-side.away{flex-direction:row;justify-content:flex-start;}
+  .match-row .vs{text-align:left;font-size:16px;}
+  .match-row .stage{text-align:left;}
+
+  /* hero shrink */
+  .hero-match{padding:18px 16px;}
+  .hero-match .vs-grid{gap:10px;}
+  .hero-team .flag-xl{width:54px;height:38px;font-size:30px;}
+  .hero-team .nm{font-size:22px;}
+  .scorebox{font-size:48px;gap:10px;}
+  .scorebox .dash{font-size:32px;}
+  .hero-match .impact{grid-template-columns:1fr;}
+  .impact-side{justify-content:flex-start;text-align:left;}
+
+  /* draft editor stacks */
+  .draft-row{grid-template-columns:32px 1fr;}
+  .draft-row > div:nth-child(3){grid-column:1 / -1;}
+
+  .card-head{flex-wrap:wrap;}
+}

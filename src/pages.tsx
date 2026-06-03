@@ -518,7 +518,7 @@ export function StatsPage({ d }: { d: PageData }) {
 
       <div className="card">
         <div className="card-head"><h2>MVP Teams</h2><span className="eyebrow">most points contributed by a single team</span></div>
-        <div className="card-body" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+        <div className="card-body mvp-grid">
           {mvp.length ? mvp.map((t) => (
             <div key={t.team} style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 44, color: "var(--lime)", lineHeight: 1 }}>{t.points}</div>
@@ -537,7 +537,7 @@ export function StatsPage({ d }: { d: PageData }) {
 /* ============================================================ RULES */
 export function RulesPage(_: { d: PageData }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: 32 }}>
+    <div className="rules-grid">
       <div>
         <h2 className="section-title">How the Sweepstake Works</h2>
         <div className="section-sub">scoring · tie-breaks · the boring stuff</div>
@@ -629,7 +629,7 @@ export function AdminPage({ d }: { d: PageData }) {
           <div className="card-head"><h2>Draft</h2><span className="eyebrow">{PARTICIPANTS.length} owners · 48 teams</span></div>
           <div className="card-body tight">
             {PARTICIPANTS.map((p) => (
-              <div key={p.id} style={{ display: "grid", gridTemplateColumns: "38px 150px 1fr", gap: 14, alignItems: "center", padding: "14px 20px", borderBottom: "1px solid var(--border-soft)" }}>
+              <div key={p.id} className="draft-row">
                 <div className="av" style={{ width: 32, height: 32 }}>{initialsOf(p.name)}</div>
                 <div style={{ fontWeight: 600 }}>{p.name}</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
