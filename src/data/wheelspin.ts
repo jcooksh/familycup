@@ -75,15 +75,25 @@ export const WHEELSPIN_EVENT = "familycup:wheelspin"
 const emptySlot = (): WheelSlot => ({ assigned: {}, order: [] })
 const empty = (): WheelState => ({ fav: {}, favOrder: [], groups: {}, locked: false })
 
+// Published results. After the draft is run on one device, Submit & Lock, hit
+// Export, and paste the exported JSON here. Once set, every visitor sees the
+// same locked teams (no shared server needed). null = not published yet.
+export const BAKED_RESULTS: WheelState | null = null
+
+// The default state before anyone has spun on this device: the published
+// results if they exist, otherwise empty.
+const baseline = (): WheelState =>
+  BAKED_RESULTS ? structuredClone(BAKED_RESULTS) : empty()
+
 export function loadWheel(): WheelState {
-  if (typeof localStorage === "undefined") return empty()
+  if (typeof localStorage === "undefined") return baseline()
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return empty()
+    if (!raw) return baseline()
     const parsed = JSON.parse(raw)
     return { ...empty(), ...parsed, groups: { ...(parsed.groups ?? {}) } }
   } catch {
-    return empty()
+    return baseline()
   }
 }
 

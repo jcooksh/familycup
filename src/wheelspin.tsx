@@ -101,7 +101,7 @@ function Wheel({
 
 function WheelGame({
   title, subtitle, teams, preassigned, assigned, order, locked, compact,
-  onAssign, onReset,
+  roster = FAMILY, gate, onAssign, onReset,
 }: {
   title: string
   subtitle: string
@@ -111,21 +111,23 @@ function WheelGame({
   order: string[]
   locked: boolean
   compact?: boolean
+  roster?: Family[] // who may spin, in turn order (defaults to everyone)
+  gate?: string // if set, the wheel is blocked with this message
   onAssign: (team: string, person: Family) => void
   onReset: () => void
 }) {
   const remaining = teams.filter((t) => !(t in assigned))
   const done = remaining.length === 0
 
-  const turnIdx = order.length % FAMILY.length
-  const currentPerson = FAMILY[turnIdx]
+  const turnIdx = roster.length ? order.length % roster.length : 0
+  const currentPerson = roster[turnIdx] ?? FAMILY[0]
 
   const [spinning, setSpinning] = React.useState(false)
   const [targetIdx, setTargetIdx] = React.useState<number | null>(null)
   const [lastWin, setLastWin] = React.useState<{ team: string; name: string } | null>(null)
 
   const spin = () => {
-    if (spinning || done || locked) return
+    if (spinning || done || locked || gate) return
     setLastWin(null)
     const idx = Math.floor(Math.random() * remaining.length)
     setTargetIdx(idx)
@@ -185,6 +187,8 @@ function WheelGame({
           <div className="wheel-controls">
             {locked ? (
               <div className="turn-banner locked">🔒 Submitted · teams locked</div>
+            ) : gate ? (
+              <div className="turn-banner gated">🔒 {gate}</div>
             ) : done ? (
               <div className="turn-banner locked">✓ All teams drawn</div>
             ) : (
@@ -274,6 +278,23 @@ export function WheelspinPage() {
     setState(lockWheel())
   }
 
+  // Copy + download the locked results so they can be sent off and published
+  // for everyone (pasted into BAKED_RESULTS).
+  const exportResults = () => {
+    const json = JSON.stringify(state, null, 2)
+    navigator.clipboard?.writeText(json).catch(() => {})
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }))
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "familycup-results.json"
+    a.click()
+    URL.revokeObjectURL(url)
+    alert("Results copied to clipboard and downloaded as familycup-results.json.\nSend that file to Jake to publish for everyone.")
+  }
+
+  // Group wheels open only once all four favourites are drawn.
+  const favDone = state.favOrder.length === FAVOURITES.length
+
   return (
     <div className="wheelspin">
       <div className="wheelspin-intro">
@@ -297,6 +318,12 @@ export function WheelspinPage() {
       <div className="wheelspin-groups">
         {GROUPS.map((g) => {
           const fav = groupFavourite(g)
+          const favOwnerId = fav ? state.fav[fav] : undefined
+          const favOwner = FAMILY.find((f) => f.id === favOwnerId)
+          // The favourite's owner already has that team, so they sit this one out.
+          const roster = favOwnerId ? FAMILY.filter((f) => f.id !== favOwnerId) : FAMILY
+          // Group wheels stay locked until every favourite has been drawn.
+          const gate = favDone ? undefined : "Spin the favourites first"
           const slot = state.groups[g.id] ?? { assigned: {}, order: [] }
           return (
             <WheelGame
@@ -305,10 +332,15 @@ export function WheelspinPage() {
               title={g.name}
               subtitle={groupSpinTeams(g).join(" · ")}
               teams={groupSpinTeams(g)}
-              preassigned={fav ? { team: fav, note: "via the favourites wheel" } : undefined}
+              preassigned={fav ? {
+                team: fav,
+                note: favOwner ? `${favOwner.name}'s favourite — sits this group out` : "via the favourites wheel",
+              } : undefined}
               assigned={slot.assigned}
               order={slot.order}
               locked={state.locked}
+              roster={roster}
+              gate={gate}
               onAssign={assignGroup(g.id)}
               onReset={() => persist(resetWheel(g.id))}
             />
@@ -318,7 +350,13 @@ export function WheelspinPage() {
 
       <div className="wheelspin-submit">
         {state.locked ? (
-          <div className="submit-locked">🔒 Teams submitted and locked</div>
+          <>
+            <div className="submit-locked">🔒 Teams submitted and locked</div>
+            <button className="btn export-btn" onClick={exportResults}>
+              ⬇ Export results
+            </button>
+            <p className="export-hint">Send the exported file to Jake to publish these teams for everyone.</p>
+          </>
         ) : (
           <button className="btn submit-btn" onClick={submit}>
             Submit & Lock Teams
