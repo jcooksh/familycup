@@ -17,8 +17,13 @@ export const FLAGS: Record<string, string> = {
   // AFC
   Australia: "🇦🇺", Iran: "🇮🇷", Iraq: "🇮🇶", Japan: "🇯🇵",
   "Saudi Arabia": "🇸🇦", "South Korea": "🇰🇷", "United Arab Emirates": "🇦🇪", Uzbekistan: "🇺🇿",
+  Qatar: "🇶🇦", Jordan: "🇯🇴",
   // OFC
   "New Zealand": "🇳🇿",
+  // additional group-stage nations
+  Bosnia: "🇧🇦", Switzerland: "🇨🇭", Haiti: "🇭🇹", Scotland: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", Turkey: "🇹🇷",
+  "Curaçao": "🇨🇼", "Cape Verde": "🇨🇻", Norway: "🇳🇴", Austria: "🇦🇹",
+  Congo: "🇨🇩", Ghana: "🇬🇭",
 }
 
 export const flagOf = (team: string) => FLAGS[team] || "🏳️"

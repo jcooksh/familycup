@@ -1,8 +1,9 @@
 import * as React from "react"
 
 import {
-  FAMILY, FAVOURITES, DRAW_TEAMS, type WheelKind, type WheelState,
-  loadWheel, saveWheel, resetWheel, lockWheel, WHEELSPIN_EVENT,
+  FAMILY, FAVOURITES, GROUPS, groupSpinTeams, groupFavourite,
+  type Family, type WheelState,
+  loadWheel, saveWheel, resetWheel, lockWheel, slotOf, WHEELSPIN_EVENT,
 } from "@/data/wheelspin"
 import { flagOf } from "@/data/flags"
 
@@ -99,17 +100,20 @@ function Wheel({
 }
 
 function WheelGame({
-  kind, title, subtitle, teams, state, persist,
+  title, subtitle, teams, preassigned, assigned, order, locked, compact,
+  onAssign, onReset,
 }: {
-  kind: WheelKind
   title: string
   subtitle: string
-  teams: string[]
-  state: WheelState
-  persist: (s: WheelState) => void
+  teams: string[] // the pool that actually spins
+  preassigned?: { team: string; note: string } // a team handed out elsewhere (e.g. favourite)
+  assigned: Record<string, string>
+  order: string[]
+  locked: boolean
+  compact?: boolean
+  onAssign: (team: string, person: Family) => void
+  onReset: () => void
 }) {
-  const assigned = kind === "fav" ? state.fav : state.draw
-  const order = kind === "fav" ? state.favOrder : state.drawOrder
   const remaining = teams.filter((t) => !(t in assigned))
   const done = remaining.length === 0
 
@@ -121,7 +125,7 @@ function WheelGame({
   const [lastWin, setLastWin] = React.useState<{ team: string; name: string } | null>(null)
 
   const spin = () => {
-    if (spinning || done || state.locked) return
+    if (spinning || done || locked) return
     setLastWin(null)
     const idx = Math.floor(Math.random() * remaining.length)
     setTargetIdx(idx)
@@ -129,23 +133,15 @@ function WheelGame({
   }
 
   const onDone = (team: string) => {
-    const next: WheelState = structuredClone(state)
-    if (kind === "fav") {
-      next.fav[team] = currentPerson.id
-      next.favOrder.push(team)
-    } else {
-      next.draw[team] = currentPerson.id
-      next.drawOrder.push(team)
-    }
     setLastWin({ team, name: currentPerson.name })
     setSpinning(false)
     setTargetIdx(null)
-    persist(next)
+    onAssign(team, currentPerson)
   }
 
   const reset = () => {
     if (!confirm(`Reset "${title}"? This clears those results.`)) return
-    persist(resetWheel(kind))
+    onReset()
     setLastWin(null)
     setSpinning(false)
     setTargetIdx(null)
@@ -158,13 +154,13 @@ function WheelGame({
   }))
 
   return (
-    <section className="wheelgame">
+    <section className={compact ? "wheelgame compact" : "wheelgame"}>
       <div className="wheelgame-head">
         <div>
           <h2>{title}</h2>
           <p className="wheelgame-sub">{subtitle}</p>
         </div>
-        {(order.length > 0 || done) && !state.locked && (
+        {(order.length > 0 || done) && !locked && (
           <button className="btn ghost" onClick={reset}>Reset</button>
         )}
       </div>
@@ -187,7 +183,7 @@ function WheelGame({
           )}
 
           <div className="wheel-controls">
-            {state.locked ? (
+            {locked ? (
               <div className="turn-banner locked">🔒 Submitted · teams locked</div>
             ) : done ? (
               <div className="turn-banner locked">✓ All teams drawn</div>
@@ -211,6 +207,11 @@ function WheelGame({
         </div>
 
         <div className="wheel-results">
+          {preassigned && (
+            <div className="wheel-preassigned">
+              {flagOf(preassigned.team)} <strong>{preassigned.team}</strong> — {preassigned.note}
+            </div>
+          )}
           {byPerson.map(({ person, teams: ts }) => (
             <div className="wheel-result-card" key={person.id}>
               <div className="wheel-result-head">
@@ -251,6 +252,23 @@ export function WheelspinPage() {
     saveWheel(s)
   }
 
+  // Favourites wheel writes into fav/favOrder.
+  const assignFav = (team: string, person: Family) => {
+    const next: WheelState = structuredClone(state)
+    next.fav[team] = person.id
+    next.favOrder.push(team)
+    persist(next)
+  }
+
+  // Each group wheel writes into its own slot.
+  const assignGroup = (groupId: string) => (team: string, person: Family) => {
+    const next: WheelState = structuredClone(state)
+    const slot = slotOf(next, groupId)
+    slot.assigned[team] = person.id
+    slot.order.push(team)
+    persist(next)
+  }
+
   const submit = () => {
     if (!confirm("Lock in all team assignments? This cannot be undone.")) return
     setState(lockWheel())
@@ -259,26 +277,45 @@ export function WheelspinPage() {
   return (
     <div className="wheelspin">
       <div className="wheelspin-intro">
-        Each player spins on their turn and the wheel hands them a team. Go round
-        the family until every team is gone. Results lock in and feed the
-        standings.
+        Each player spins on their turn and the wheel hands them a team. The
+        favourites go first, then spin through every group. Results lock in and
+        feed the standings.
       </div>
+
       <WheelGame
-        kind="fav"
         title="The Favourites"
         subtitle="Spain · England · France · Brazil — one each"
         teams={FAVOURITES}
-        state={state}
-        persist={persist}
+        assigned={state.fav}
+        order={state.favOrder}
+        locked={state.locked}
+        onAssign={assignFav}
+        onReset={() => persist(resetWheel("fav"))}
       />
-      <WheelGame
-        kind="draw"
-        title="The Big Draw"
-        subtitle="42 teams · round-robin · split as evenly as possible"
-        teams={DRAW_TEAMS}
-        state={state}
-        persist={persist}
-      />
+
+      <h3 className="wheelspin-section">The Groups</h3>
+      <div className="wheelspin-groups">
+        {GROUPS.map((g) => {
+          const fav = groupFavourite(g)
+          const slot = state.groups[g.id] ?? { assigned: {}, order: [] }
+          return (
+            <WheelGame
+              key={g.id}
+              compact
+              title={g.name}
+              subtitle={groupSpinTeams(g).join(" · ")}
+              teams={groupSpinTeams(g)}
+              preassigned={fav ? { team: fav, note: "via the favourites wheel" } : undefined}
+              assigned={slot.assigned}
+              order={slot.order}
+              locked={state.locked}
+              onAssign={assignGroup(g.id)}
+              onReset={() => persist(resetWheel(g.id))}
+            />
+          )
+        })}
+      </div>
+
       <div className="wheelspin-submit">
         {state.locked ? (
           <div className="submit-locked">🔒 Teams submitted and locked</div>

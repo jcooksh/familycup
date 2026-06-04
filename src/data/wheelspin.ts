@@ -15,54 +15,73 @@ export const FAMILY: Family[] = [
   { id: "jake", name: "Jake" },
 ]
 
-// Wheel 1 — the four favourites. One handed to each player.
+// Wheel 1 — the four favourites. One handed to each player. These are also the
+// top seed of their group, so they're excluded from the group wheels below.
 export const FAVOURITES = ["Spain", "England", "France", "Brazil"]
+const FAV_SET = new Set(FAVOURITES)
 
-// Wheel 2 — the big draw. 42 teams, spun round-robin so the split is as even
-// as possible (Mat/Steph get 11, Darcey/Jake get 10).
-export const DRAW_TEAMS = [
-  // UEFA (Europe)
-  "Belgium", "Croatia", "Czech Republic", "Denmark", "Germany", "Italy",
-  "Netherlands", "Poland", "Portugal", "Romania", "Sweden", "Ukraine",
-  // CONMEBOL (South America)
-  "Argentina", "Colombia", "Ecuador", "Paraguay", "Uruguay",
-  // CONCACAF (North/Central America & Caribbean)
-  "Canada", "Costa Rica", "Honduras", "Jamaica", "Mexico", "Panama", "United States",
-  // CAF (Africa)
-  "Algeria", "Cameroon", "Egypt", "Ivory Coast", "Morocco", "Nigeria",
-  "Senegal", "South Africa", "Tunisia",
-  // AFC (Asia)
-  "Australia", "Iran", "Iraq", "Japan", "Saudi Arabia", "South Korea",
-  "United Arab Emirates", "Uzbekistan",
-  // OFC (Oceania)
-  "New Zealand",
+// The twelve groups (A–L), four teams each. One wheel per group.
+export interface Group {
+  id: string
+  name: string
+  teams: string[]
+}
+
+export const GROUPS: Group[] = [
+  { id: "A", name: "Group A", teams: ["Mexico", "South Africa", "South Korea", "Czech Republic"] },
+  { id: "B", name: "Group B", teams: ["Canada", "Bosnia", "Qatar", "Switzerland"] },
+  { id: "C", name: "Group C", teams: ["Brazil", "Morocco", "Haiti", "Scotland"] },
+  { id: "D", name: "Group D", teams: ["United States", "Paraguay", "Australia", "Turkey"] },
+  { id: "E", name: "Group E", teams: ["Germany", "Curaçao", "Ivory Coast", "Ecuador"] },
+  { id: "F", name: "Group F", teams: ["Netherlands", "Japan", "Sweden", "Tunisia"] },
+  { id: "G", name: "Group G", teams: ["Belgium", "Egypt", "Iran", "New Zealand"] },
+  { id: "H", name: "Group H", teams: ["Spain", "Cape Verde", "Saudi Arabia", "Uruguay"] },
+  { id: "I", name: "Group I", teams: ["France", "Senegal", "Iraq", "Norway"] },
+  { id: "J", name: "Group J", teams: ["Argentina", "Algeria", "Austria", "Jordan"] },
+  { id: "K", name: "Group K", teams: ["Portugal", "Congo", "Uzbekistan", "Colombia"] },
+  { id: "L", name: "Group L", teams: ["England", "Croatia", "Ghana", "Panama"] },
 ]
 
-// Every team in play (favourites + draw). Static — used to filter match data
-// in CI, where there is no localStorage and no ownership yet.
-export const ALL_TEAMS = [...FAVOURITES, ...DRAW_TEAMS]
+// Teams that actually get spun in a group wheel (favourites are handed out by
+// the favourites wheel, so they're dropped here).
+export function groupSpinTeams(g: Group): string[] {
+  return g.teams.filter((t) => !FAV_SET.has(t))
+}
 
-export type WheelKind = "fav" | "draw"
+// The favourite seeded into a group, if any (shown as already assigned).
+export function groupFavourite(g: Group): string | undefined {
+  return g.teams.find((t) => FAV_SET.has(t))
+}
+
+// Every team in play. Static — used to filter match data in CI, where there is
+// no localStorage and no ownership yet. Favourites already live inside groups.
+export const ALL_TEAMS = GROUPS.flatMap((g) => g.teams)
+
+export interface WheelSlot {
+  assigned: Record<string, string> // team -> family id
+  order: string[] // teams in the order they were drawn
+}
 
 export interface WheelState {
   fav: Record<string, string> // team -> family id
-  draw: Record<string, string> // team -> family id
-  favOrder: string[] // teams in the order they were drawn
-  drawOrder: string[]
+  favOrder: string[]
+  groups: Record<string, WheelSlot> // group id -> slot
   locked: boolean // once submitted, no further changes allowed
 }
 
-const KEY = "familycup.wheelspin.v1"
+const KEY = "familycup.wheelspin.v2"
 export const WHEELSPIN_EVENT = "familycup:wheelspin"
 
-const empty = (): WheelState => ({ fav: {}, draw: {}, favOrder: [], drawOrder: [], locked: false })
+const emptySlot = (): WheelSlot => ({ assigned: {}, order: [] })
+const empty = (): WheelState => ({ fav: {}, favOrder: [], groups: {}, locked: false })
 
 export function loadWheel(): WheelState {
   if (typeof localStorage === "undefined") return empty()
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return empty()
-    return { ...empty(), ...JSON.parse(raw) }
+    const parsed = JSON.parse(raw)
+    return { ...empty(), ...parsed, groups: { ...(parsed.groups ?? {}) } }
   } catch {
     return empty()
   }
@@ -74,14 +93,20 @@ export function saveWheel(s: WheelState): void {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(WHEELSPIN_EVENT))
 }
 
-export function resetWheel(kind: WheelKind): WheelState {
+// Ensure a slot exists for a group id and return it (mutates s).
+export function slotOf(s: WheelState, groupId: string): WheelSlot {
+  if (!s.groups[groupId]) s.groups[groupId] = emptySlot()
+  return s.groups[groupId]
+}
+
+// target = "fav" or a group id.
+export function resetWheel(target: string): WheelState {
   const s = loadWheel()
-  if (kind === "fav") {
+  if (target === "fav") {
     s.fav = {}
     s.favOrder = []
   } else {
-    s.draw = {}
-    s.drawOrder = []
+    s.groups[target] = emptySlot()
   }
   saveWheel(s)
   return s
@@ -94,8 +119,10 @@ export function lockWheel(): WheelState {
   return s
 }
 
-// Combined team -> family id across both wheels.
+// Combined team -> family id across the favourites wheel and every group.
 export function ownershipMap(): Record<string, string> {
   const s = loadWheel()
-  return { ...s.fav, ...s.draw }
+  const out: Record<string, string> = { ...s.fav }
+  for (const slot of Object.values(s.groups)) Object.assign(out, slot.assigned)
+  return out
 }
