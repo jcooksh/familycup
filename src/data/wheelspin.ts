@@ -91,7 +91,7 @@ export interface WheelState {
   locked: boolean // once submitted, no further changes allowed
 }
 
-const KEY = "familycup.wheelspin.v2"
+const KEY = "familycup.wheelspin.v3"
 export const WHEELSPIN_EVENT = "familycup:wheelspin"
 
 const emptySlot = (): WheelSlot => ({ assigned: {}, order: [] })
@@ -100,7 +100,25 @@ const empty = (): WheelState => ({ fav: {}, favOrder: [], groups: {}, locked: fa
 // Published results. After the draft is run on one device, Submit & Lock, hit
 // Export, and paste the exported JSON here. Once set, every visitor sees the
 // same locked teams (no shared server needed). null = not published yet.
-export const BAKED_RESULTS: WheelState | null = null
+export const BAKED_RESULTS: WheelState | null = {
+  fav: { France: "mat", Brazil: "steph", England: "darcey", Spain: "jake" },
+  favOrder: ["France", "Brazil", "England", "Spain"],
+  groups: {
+    A: { assigned: { Mexico: "mat", "Czech Republic": "steph", "South Africa": "jake", "South Korea": "darcey" }, order: ["Mexico", "Czech Republic", "South Africa", "South Korea"] },
+    B: { assigned: { Switzerland: "mat", Bosnia: "darcey", Canada: "steph", Qatar: "jake" }, order: ["Switzerland", "Bosnia", "Canada", "Qatar"] },
+    C: { assigned: { Haiti: "mat", Morocco: "darcey", Scotland: "jake" }, order: ["Haiti", "Morocco", "Scotland"] },
+    D: { assigned: { Australia: "mat", Paraguay: "jake", "United States": "steph", Turkey: "darcey" }, order: ["Australia", "Paraguay", "United States", "Turkey"] },
+    E: { assigned: { "Curaçao": "mat", "Ivory Coast": "jake", Germany: "darcey", Ecuador: "steph" }, order: ["Curaçao", "Ivory Coast", "Germany", "Ecuador"] },
+    F: { assigned: { Netherlands: "steph", Tunisia: "mat", Japan: "darcey", Sweden: "jake" }, order: ["Netherlands", "Tunisia", "Japan", "Sweden"] },
+    G: { assigned: { Iran: "steph", "New Zealand": "mat", Egypt: "jake", Belgium: "darcey" }, order: ["Iran", "New Zealand", "Egypt", "Belgium"] },
+    H: { assigned: { "Cape Verde": "steph", Uruguay: "darcey", "Saudi Arabia": "mat" }, order: ["Cape Verde", "Uruguay", "Saudi Arabia"] },
+    I: { assigned: { Senegal: "steph", Norway: "darcey", Iraq: "jake" }, order: ["Senegal", "Norway", "Iraq"] },
+    J: { assigned: { Argentina: "steph", Jordan: "jake", Algeria: "mat", Austria: "darcey" }, order: ["Argentina", "Jordan", "Algeria", "Austria"] },
+    K: { assigned: { Colombia: "steph", Congo: "jake", Portugal: "darcey", Uzbekistan: "mat" }, order: ["Colombia", "Congo", "Portugal", "Uzbekistan"] },
+    L: { assigned: { Croatia: "mat", Panama: "steph", Ghana: "jake" }, order: ["Croatia", "Panama", "Ghana"] },
+  },
+  locked: true,
+}
 
 // The default state before anyone has spun on this device: the published
 // results if they exist, otherwise empty.
