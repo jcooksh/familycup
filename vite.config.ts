@@ -3,9 +3,8 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import path from "node:path"
 
-// On GitHub Pages the site is served from /<repo>/. The deploy workflow sets
-// GITHUB_PAGES=1; locally we serve from root.
-const base = process.env.GITHUB_PAGES ? "/familycup/" : "/"
+// Custom domain (familycup.ext.io) serves from root, so base is always "/".
+const base = "/"
 
 export default defineConfig({
   base,
