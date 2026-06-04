@@ -1,7 +1,7 @@
 import * as React from "react"
 
 import {
-  FAMILY, FAVOURITES, GROUPS, groupSpinTeams, groupFavourite,
+  FAMILY, FAVOURITES, GROUPS, groupSpinTeams, groupFavourite, turnOrderFor,
   type Family, type WheelState,
   loadWheel, saveWheel, resetWheel, lockWheel, slotOf, WHEELSPIN_EVENT,
 } from "@/data/wheelspin"
@@ -310,6 +310,7 @@ export function WheelspinPage() {
         assigned={state.fav}
         order={state.favOrder}
         locked={state.locked}
+        roster={turnOrderFor("fav")}
         onAssign={assignFav}
         onReset={() => persist(resetWheel("fav"))}
       />
@@ -320,8 +321,10 @@ export function WheelspinPage() {
           const fav = groupFavourite(g)
           const favOwnerId = fav ? state.fav[fav] : undefined
           const favOwner = FAMILY.find((f) => f.id === favOwnerId)
-          // The favourite's owner already has that team, so they sit this one out.
-          const roster = favOwnerId ? FAMILY.filter((f) => f.id !== favOwnerId) : FAMILY
+          // Each group spins in its own distinct order; the favourite's owner is
+          // dropped (they already have that team), keeping the rest in sequence.
+          const base = turnOrderFor(g.id)
+          const roster = favOwnerId ? base.filter((f) => f.id !== favOwnerId) : base
           // Group wheels stay locked until every favourite has been drawn.
           const gate = favDone ? undefined : "Spin the favourites first"
           const slot = state.groups[g.id] ?? { assigned: {}, order: [] }

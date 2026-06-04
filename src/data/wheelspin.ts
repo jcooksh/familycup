@@ -57,6 +57,28 @@ export function groupFavourite(g: Group): string | undefined {
 // no localStorage and no ownership yet. Favourites already live inside groups.
 export const ALL_TEAMS = GROUPS.flatMap((g) => g.teams)
 
+// All orderings of the family. Used to give every wheel its own turn order.
+function permutations<T>(arr: T[]): T[][] {
+  if (arr.length <= 1) return [arr]
+  const out: T[][] = []
+  arr.forEach((x, i) => {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)]
+    for (const p of permutations(rest)) out.push([x, ...p])
+  })
+  return out
+}
+const FAMILY_PERMS = permutations(FAMILY)
+
+// Every wheel gets a distinct permutation: favourites + 12 groups = 13 wheels,
+// 4! = 24 orderings available, so no two wheels share the same order. A group
+// whose favourite is already owned drops that owner from this order, keeping the
+// rest in sequence (those rosters differ by member, so they stay distinct too).
+const WHEEL_ORDER_KEYS = ["fav", ...GROUPS.map((g) => g.id)]
+export function turnOrderFor(key: string): Family[] {
+  const i = WHEEL_ORDER_KEYS.indexOf(key)
+  return FAMILY_PERMS[(i < 0 ? 0 : i) % FAMILY_PERMS.length]
+}
+
 export interface WheelSlot {
   assigned: Record<string, string> // team -> family id
   order: string[] // teams in the order they were drawn
