@@ -2,7 +2,7 @@ import * as React from "react"
 
 import {
   FAMILY, FAVOURITES, DRAW_TEAMS, type WheelKind, type WheelState,
-  loadWheel, saveWheel, resetWheel, WHEELSPIN_EVENT,
+  loadWheel, saveWheel, resetWheel, lockWheel, WHEELSPIN_EVENT,
 } from "@/data/wheelspin"
 import { flagOf } from "@/data/flags"
 
@@ -121,7 +121,7 @@ function WheelGame({
   const [lastWin, setLastWin] = React.useState<{ team: string; name: string } | null>(null)
 
   const spin = () => {
-    if (spinning || done) return
+    if (spinning || done || state.locked) return
     setLastWin(null)
     const idx = Math.floor(Math.random() * remaining.length)
     setTargetIdx(idx)
@@ -164,7 +164,7 @@ function WheelGame({
           <h2>{title}</h2>
           <p className="wheelgame-sub">{subtitle}</p>
         </div>
-        {(order.length > 0 || done) && (
+        {(order.length > 0 || done) && !state.locked && (
           <button className="btn ghost" onClick={reset}>Reset</button>
         )}
       </div>
@@ -187,8 +187,10 @@ function WheelGame({
           )}
 
           <div className="wheel-controls">
-            {done ? (
-              <div className="turn-banner locked">🔒 Locked in · {teams.length} teams drawn</div>
+            {state.locked ? (
+              <div className="turn-banner locked">🔒 Submitted · teams locked</div>
+            ) : done ? (
+              <div className="turn-banner locked">✓ All teams drawn</div>
             ) : (
               <>
                 <div className="turn-banner" style={{ borderColor: PALETTE[turnIdx % PALETTE.length] }}>
@@ -249,6 +251,11 @@ export function WheelspinPage() {
     saveWheel(s)
   }
 
+  const submit = () => {
+    if (!confirm("Lock in all team assignments? This cannot be undone.")) return
+    setState(lockWheel())
+  }
+
   return (
     <div className="wheelspin">
       <div className="wheelspin-intro">
@@ -272,6 +279,15 @@ export function WheelspinPage() {
         state={state}
         persist={persist}
       />
+      <div className="wheelspin-submit">
+        {state.locked ? (
+          <div className="submit-locked">🔒 Teams submitted and locked</div>
+        ) : (
+          <button className="btn submit-btn" onClick={submit}>
+            Submit & Lock Teams
+          </button>
+        )}
+      </div>
     </div>
   )
 }

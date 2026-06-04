@@ -502,3 +502,18 @@ body.dank .live-pulse{animation:dankflash 0.6s steps(2) infinite;}
 }
 .wheel-result-teams .muted{ color:var(--text-4); }
 .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--text-2); }
+
+.wheelspin-submit{ display:flex; justify-content:center; padding:8px 0 16px; }
+.submit-btn{
+  font-family:var(--font-display); letter-spacing:1px; font-size:18px;
+  padding:14px 40px; background:var(--win); color:#04210f; border:none;
+  border-radius:999px; cursor:pointer; transition:transform .08s, filter .15s;
+  font-weight:700;
+}
+.submit-btn:hover{ filter:brightness(1.08); }
+.submit-btn:active{ transform:scale(.96); }
+.submit-locked{
+  display:inline-flex; align-items:center; gap:8px;
+  border:2px solid var(--win); border-radius:999px; padding:12px 28px;
+  font-weight:700; font-size:16px; color:var(--win); background:var(--surface-2);
+}

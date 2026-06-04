@@ -7,9 +7,9 @@ export interface Family {
   name: string
 }
 
-// The four players. Turn order = this order (Maat → Steph → Darcey → Jake).
+// The four players. Turn order = this order (Mat → Steph → Darcey → Jake).
 export const FAMILY: Family[] = [
-  { id: "maat", name: "Maat" },
+  { id: "mat", name: "Mat" },
   { id: "steph", name: "Steph" },
   { id: "darcey", name: "Darcey" },
   { id: "jake", name: "Jake" },
@@ -19,7 +19,7 @@ export const FAMILY: Family[] = [
 export const FAVOURITES = ["Spain", "England", "France", "Brazil"]
 
 // Wheel 2 — the big draw. 42 teams, spun round-robin so the split is as even
-// as possible (Maat/Steph get 11, Darcey/Jake get 10).
+// as possible (Mat/Steph get 11, Darcey/Jake get 10).
 export const DRAW_TEAMS = [
   // UEFA (Europe)
   "Belgium", "Croatia", "Czech Republic", "Denmark", "Germany", "Italy",
@@ -49,12 +49,13 @@ export interface WheelState {
   draw: Record<string, string> // team -> family id
   favOrder: string[] // teams in the order they were drawn
   drawOrder: string[]
+  locked: boolean // once submitted, no further changes allowed
 }
 
 const KEY = "familycup.wheelspin.v1"
 export const WHEELSPIN_EVENT = "familycup:wheelspin"
 
-const empty = (): WheelState => ({ fav: {}, draw: {}, favOrder: [], drawOrder: [] })
+const empty = (): WheelState => ({ fav: {}, draw: {}, favOrder: [], drawOrder: [], locked: false })
 
 export function loadWheel(): WheelState {
   if (typeof localStorage === "undefined") return empty()
@@ -82,6 +83,13 @@ export function resetWheel(kind: WheelKind): WheelState {
     s.draw = {}
     s.drawOrder = []
   }
+  saveWheel(s)
+  return s
+}
+
+export function lockWheel(): WheelState {
+  const s = loadWheel()
+  s.locked = true
   saveWheel(s)
   return s
 }
