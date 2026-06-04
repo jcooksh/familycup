@@ -11,8 +11,12 @@ import { writeFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 import path from "node:path"
 
-import { TEAM_OWNER } from "../src/data/draft.ts"
+import { ALL_TEAMS } from "../src/data/wheelspin.ts"
 import { canonicalTeam } from "../src/data/aliases.ts"
+
+// Ownership is decided in the browser (Wheelspin tab) and isn't available here,
+// so filter by the fixed universe of teams in play instead.
+const POOL = new Set(ALL_TEAMS)
 
 const KEY = process.env.FOOTBALL_DATA_KEY
 const COMPETITION = process.env.WC_COMPETITION || "WC"
@@ -53,7 +57,7 @@ async function main() {
       }
     })
     // keep only matches relevant to the sweepstake to keep the file small
-    .filter((m) => TEAM_OWNER[m.homeTeam] || TEAM_OWNER[m.awayTeam])
+    .filter((m) => POOL.has(m.homeTeam) || POOL.has(m.awayTeam))
 
   const payload = { updatedAt: new Date().toISOString(), matches }
   await writeFile(OUT, JSON.stringify(payload, null, 2) + "\n")
@@ -61,7 +65,7 @@ async function main() {
 
   // Warn about any owned team that never appears — likely an alias mismatch.
   const seen = new Set(matches.flatMap((m) => [m.homeTeam, m.awayTeam]))
-  const missing = Object.keys(TEAM_OWNER).filter((t) => !seen.has(t))
+  const missing = ALL_TEAMS.filter((t) => !seen.has(t))
   if (missing.length) {
     console.warn(`No fixtures yet for: ${missing.join(", ")}`)
   }

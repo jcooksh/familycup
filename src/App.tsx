@@ -1,6 +1,8 @@
 import * as React from "react"
 
-import { PARTICIPANTS, TOURNAMENT } from "@/data/draft"
+import { PARTICIPANTS, TOURNAMENT, refreshOwnership } from "@/data/draft"
+import { ALL_TEAMS, WHEELSPIN_EVENT } from "@/data/wheelspin"
+import { WheelspinPage } from "@/wheelspin"
 import { computeStandings, type Match } from "@/lib/scoring"
 import {
   buildTeamRows, participantForm, knockoutCount, tournamentTotals,
@@ -21,16 +23,18 @@ interface MatchesFile {
 }
 
 type RouteKey =
+  | "wheelspin"
   | "standings" | "matchday" | "fixtures" | "bracket"
   | "players" | "teams" | "stats" | "rules" | "admin"
 
 const ROUTE_META: Record<RouteKey, { title: string; sub: string }> = {
-  standings: { title: "Standings", sub: "live · 11 players" },
+  wheelspin: { title: "Wheelspin", sub: "spin to draft teams" },
+  standings: { title: "Standings", sub: "live · 4 players" },
   matchday: { title: "Match Day", sub: "live now" },
-  fixtures: { title: "Fixtures & Results", sub: "104 matches · jun–jul" },
+  fixtures: { title: "Fixtures & Results", sub: "matches · jun–jul" },
   bracket: { title: "Bracket", sub: "knockout tree" },
-  players: { title: "Players", sub: "11 owners · 48 teams" },
-  teams: { title: "Teams", sub: "48 nations" },
+  players: { title: "Players", sub: `4 players · ${ALL_TEAMS.length} teams` },
+  teams: { title: "Teams", sub: `${ALL_TEAMS.length} nations` },
   stats: { title: "Stats & Records", sub: "live tracker" },
   rules: { title: "Rules", sub: "scoring · tie-breaks" },
   admin: { title: "Admin", sub: "draft · data" },
@@ -38,6 +42,7 @@ const ROUTE_META: Record<RouteKey, { title: string; sub: string }> = {
 
 // ── sidebar icons ──
 const I = {
+  wheelspin: <><circle cx="12" cy="12" r="9" /><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" /><circle cx="12" cy="12" r="2" /></>,
   standings: <path d="M4 19h16M6 16V8M12 16V4M18 16v-6" />,
   matchday: <><circle cx="12" cy="12" r="9" /><path d="M12 3v18M3 12h18" /></>,
   fixtures: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /></>,
@@ -69,6 +74,18 @@ export default function App() {
   const [loading, setLoading] = React.useState(true)
   const [{ route, param }, setNav] = React.useState(parseHash())
   const [navOpen, setNavOpen] = React.useState(false)
+  const [spinV, setSpinV] = React.useState(0)
+
+  // Rebuild team ownership whenever the wheelspin results change.
+  React.useEffect(() => {
+    const onSpin = () => { refreshOwnership(); setSpinV((v) => v + 1) }
+    window.addEventListener(WHEELSPIN_EVENT, onSpin)
+    window.addEventListener("storage", onSpin)
+    return () => {
+      window.removeEventListener(WHEELSPIN_EVENT, onSpin)
+      window.removeEventListener("storage", onSpin)
+    }
+  }, [])
 
   // ── ULTRA MEGA DANK MODE (triple-click bottom-right corner) ──
   const [dank, setDank] = React.useState(() => localStorage.getItem("dank") === "1")
@@ -141,7 +158,7 @@ export default function App() {
       updatedAt,
       reload: load,
     }
-  }, [matches, updatedAt, load])
+  }, [matches, updatedAt, load, spinV])
 
   const liveCount = data.totals.live
 
@@ -165,6 +182,7 @@ export default function App() {
   )
 
   const PAGES: Record<RouteKey, React.ReactNode> = {
+    wheelspin: <WheelspinPage />,
     standings: <StandingsPage d={data} />,
     matchday: <MatchDayPage d={data} />,
     fixtures: <FixturesPage d={data} />,
@@ -181,12 +199,17 @@ export default function App() {
       <div className={navOpen ? "scrim show" : "scrim"} onClick={() => setNavOpen(false)} />
       <aside className={navOpen ? "sidebar open" : "sidebar"}>
         <div className="brand">
-          <div className="brand-mark">W</div>
+          <div className="brand-mark">FC</div>
           <div className="brand-name">
-            Sweepstake
+            Family Cup
             <small>WC 26 · {TOURNAMENT.host ?? "USA / CAN / MEX"}</small>
           </div>
         </div>
+
+        <div className="nav-section">Draft</div>
+        <nav className="nav">
+          {nav("wheelspin", "Wheelspin")}
+        </nav>
 
         <div className="nav-section">Tournament</div>
         <nav className="nav">
@@ -199,7 +222,7 @@ export default function App() {
         <div className="nav-section">Squad</div>
         <nav className="nav">
           {nav("players", "Players", PARTICIPANTS.length)}
-          {nav("teams", "Teams", 48)}
+          {nav("teams", "Teams", ALL_TEAMS.length)}
           {nav("stats", "Stats & Records")}
         </nav>
 
@@ -210,9 +233,9 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="avatar">W</div>
+          <div className="avatar">FC</div>
           <div className="who">
-            <div className="me">Sweepstake</div>
+            <div className="me">Family Cup</div>
             <div className="rank">{PARTICIPANTS.length} PLAYERS · WC 26</div>
           </div>
         </div>

@@ -1,0 +1,277 @@
+import * as React from "react"
+
+import {
+  FAMILY, FAVOURITES, DRAW_TEAMS, type WheelKind, type WheelState,
+  loadWheel, saveWheel, resetWheel, WHEELSPIN_EVENT,
+} from "@/data/wheelspin"
+import { flagOf } from "@/data/flags"
+
+// Segment colours, cycled around the wheel.
+const PALETTE = [
+  "#e23d3d", "#2f7be2", "#27b06a", "#e6a019", "#8b5cf6",
+  "#e2563d", "#159e9e", "#d6479a", "#5b8c2a", "#3d5ae2",
+]
+
+// ── geometry helpers ──
+const TAU = Math.PI / 180
+function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
+  const a = (deg - 90) * TAU
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)]
+}
+function segPath(cx: number, cy: number, r: number, start: number, end: number): string {
+  const [x1, y1] = polar(cx, cy, r, start)
+  const [x2, y2] = polar(cx, cy, r, end)
+  const large = end - start > 180 ? 1 : 0
+  return `M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`
+}
+
+// The spinning SVG wheel. Remounts (via key) whenever the team list changes, so
+// each spin starts from rest at 0°. Setting `targetIdx` while `spinning` kicks
+// off the CSS transition; onDone fires when it settles.
+function Wheel({
+  teams, targetIdx, spinning, onDone,
+}: {
+  teams: string[]
+  targetIdx: number | null
+  spinning: boolean
+  onDone: (team: string) => void
+}) {
+  const n = teams.length
+  const [rot, setRot] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!spinning || targetIdx == null) return
+    const segAngle = 360 / n
+    const center = (targetIdx + 0.5) * segAngle
+    const turns = 6
+    // Bring the winning segment's centre to the top pointer (0°), after a few
+    // full turns. A tiny jitter keeps it from looking mechanical.
+    const jitter = (Math.random() - 0.5) * segAngle * 0.5
+    setRot(360 * turns + (360 - center) + jitter)
+  }, [spinning, targetIdx, n])
+
+  const R = 100
+  const labelMode = n <= 14 // show names on small wheels, flags only when crowded
+  const fontSize = n <= 6 ? 9 : n <= 14 ? 7 : 9
+
+  return (
+    <div className="wheel">
+      <div className="wheel-pointer" />
+      <svg
+        viewBox="0 0 200 200"
+        className="wheel-svg"
+        style={{
+          transform: `rotate(${rot}deg)`,
+          transition: spinning ? "transform 4.2s cubic-bezier(.16,.84,.26,1)" : "none",
+        }}
+        onTransitionEnd={() => {
+          if (spinning && targetIdx != null) onDone(teams[targetIdx])
+        }}
+      >
+        {teams.map((t, i) => {
+          const seg = 360 / n
+          const start = i * seg
+          const end = start + seg
+          const mid = start + seg / 2
+          const [tx, ty] = polar(R, R, R * 0.66, mid)
+          return (
+            <g key={t}>
+              <path d={segPath(R, R, R - 2, start, end)} fill={PALETTE[i % PALETTE.length]} stroke="#0b1020" strokeWidth={0.6} />
+              <text
+                x={tx}
+                y={ty}
+                fontSize={fontSize}
+                fill="#fff"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                transform={`rotate(${mid} ${tx} ${ty})`}
+                style={{ fontWeight: 600, pointerEvents: "none" }}
+              >
+                {labelMode ? `${flagOf(t)} ${t}` : flagOf(t)}
+              </text>
+            </g>
+          )
+        })}
+        <circle cx={R} cy={R} r={9} fill="#0b1020" stroke="#fff" strokeWidth={1.5} />
+      </svg>
+    </div>
+  )
+}
+
+function WheelGame({
+  kind, title, subtitle, teams, state, persist,
+}: {
+  kind: WheelKind
+  title: string
+  subtitle: string
+  teams: string[]
+  state: WheelState
+  persist: (s: WheelState) => void
+}) {
+  const assigned = kind === "fav" ? state.fav : state.draw
+  const order = kind === "fav" ? state.favOrder : state.drawOrder
+  const remaining = teams.filter((t) => !(t in assigned))
+  const done = remaining.length === 0
+
+  const turnIdx = order.length % FAMILY.length
+  const currentPerson = FAMILY[turnIdx]
+
+  const [spinning, setSpinning] = React.useState(false)
+  const [targetIdx, setTargetIdx] = React.useState<number | null>(null)
+  const [lastWin, setLastWin] = React.useState<{ team: string; name: string } | null>(null)
+
+  const spin = () => {
+    if (spinning || done) return
+    setLastWin(null)
+    const idx = Math.floor(Math.random() * remaining.length)
+    setTargetIdx(idx)
+    setSpinning(true)
+  }
+
+  const onDone = (team: string) => {
+    const next: WheelState = structuredClone(state)
+    if (kind === "fav") {
+      next.fav[team] = currentPerson.id
+      next.favOrder.push(team)
+    } else {
+      next.draw[team] = currentPerson.id
+      next.drawOrder.push(team)
+    }
+    setLastWin({ team, name: currentPerson.name })
+    setSpinning(false)
+    setTargetIdx(null)
+    persist(next)
+  }
+
+  const reset = () => {
+    if (!confirm(`Reset "${title}"? This clears those results.`)) return
+    persist(resetWheel(kind))
+    setLastWin(null)
+    setSpinning(false)
+    setTargetIdx(null)
+  }
+
+  // teams each person ended up with, in this wheel
+  const byPerson = FAMILY.map((f) => ({
+    person: f,
+    teams: order.filter((t) => assigned[t] === f.id),
+  }))
+
+  return (
+    <section className="wheelgame">
+      <div className="wheelgame-head">
+        <div>
+          <h2>{title}</h2>
+          <p className="wheelgame-sub">{subtitle}</p>
+        </div>
+        {(order.length > 0 || done) && (
+          <button className="btn ghost" onClick={reset}>Reset</button>
+        )}
+      </div>
+
+      <div className="wheelgame-body">
+        <div className="wheel-col">
+          {remaining.length > 0 ? (
+            <Wheel
+              key={remaining.length}
+              teams={remaining}
+              targetIdx={targetIdx}
+              spinning={spinning}
+              onDone={onDone}
+            />
+          ) : (
+            <div className="wheel done">
+              <div className="wheel-done-tick">✓</div>
+              <div>All teams drawn</div>
+            </div>
+          )}
+
+          <div className="wheel-controls">
+            {done ? (
+              <div className="turn-banner locked">🔒 Locked in · {teams.length} teams drawn</div>
+            ) : (
+              <>
+                <div className="turn-banner" style={{ borderColor: PALETTE[turnIdx % PALETTE.length] }}>
+                  <span className="turn-dot" style={{ background: PALETTE[turnIdx % PALETTE.length] }} />
+                  {currentPerson.name}'s turn
+                </div>
+                <button className="btn spin-btn" onClick={spin} disabled={spinning}>
+                  {spinning ? "Spinning…" : `Spin (${remaining.length} left)`}
+                </button>
+              </>
+            )}
+            {lastWin && (
+              <div className="last-win">
+                <strong>{lastWin.name}</strong> got {flagOf(lastWin.team)} <strong>{lastWin.team}</strong>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="wheel-results">
+          {byPerson.map(({ person, teams: ts }) => (
+            <div className="wheel-result-card" key={person.id}>
+              <div className="wheel-result-head">
+                <span>{person.name}</span>
+                <span className="count">{ts.length}</span>
+              </div>
+              <div className="wheel-result-teams">
+                {ts.length === 0
+                  ? <span className="muted">—</span>
+                  : ts.map((t) => (
+                    <span className="chip" key={t}>{flagOf(t)} {t}</span>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function WheelspinPage() {
+  const [state, setState] = React.useState<WheelState>(() => loadWheel())
+
+  // Stay in sync if storage changes elsewhere (e.g. another tab, or reset).
+  React.useEffect(() => {
+    const h = () => setState(loadWheel())
+    window.addEventListener(WHEELSPIN_EVENT, h)
+    window.addEventListener("storage", h)
+    return () => {
+      window.removeEventListener(WHEELSPIN_EVENT, h)
+      window.removeEventListener("storage", h)
+    }
+  }, [])
+
+  const persist = (s: WheelState) => {
+    setState(s)
+    saveWheel(s)
+  }
+
+  return (
+    <div className="wheelspin">
+      <div className="wheelspin-intro">
+        Each player spins on their turn and the wheel hands them a team. Go round
+        the family until every team is gone. Results lock in and feed the
+        standings.
+      </div>
+      <WheelGame
+        kind="fav"
+        title="The Favourites"
+        subtitle="Spain · England · France · Brazil — one each"
+        teams={FAVOURITES}
+        state={state}
+        persist={persist}
+      />
+      <WheelGame
+        kind="draw"
+        title="The Big Draw"
+        subtitle="42 teams · round-robin · split as evenly as possible"
+        teams={DRAW_TEAMS}
+        state={state}
+        persist={persist}
+      />
+    </div>
+  )
+}

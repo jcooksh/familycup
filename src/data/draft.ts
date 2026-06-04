@@ -1,5 +1,9 @@
-// Sweepstake draft: each participant owns a set of national teams.
-// Source: shared spreadsheet. Edit here to change ownership.
+// Team ownership for the Family Cup. Unlike a fixed draft sheet, ownership here
+// is decided by the Wheelspin tab and stored in the browser. These structures
+// are rebuilt from that store via refreshOwnership(); the rest of the app reads
+// them as live ES-module bindings, so a spin instantly updates every page.
+
+import { FAMILY, ownershipMap } from "@/data/wheelspin"
 
 export interface Participant {
   id: string
@@ -8,36 +12,46 @@ export interface Participant {
 }
 
 export const TOURNAMENT = {
-  title: "World Cup 2026 Sweepstake",
+  title: "Family Cup 2026",
   fromDate: "2026-06-11",
   toDate: "2026-07-19",
   host: "USA / CAN / MEX",
 }
 
-export const PARTICIPANTS: Participant[] = [
-  { id: "will-d", name: "Will D", teams: ["Portugal", "Senegal", "Sweden", "Tunisia"] },
-  { id: "will-g", name: "Will G", teams: ["Germany", "South Korea", "Austria", "Congo"] },
-  { id: "brandwood", name: "Brandwood", teams: ["France", "Croatia", "Scotland", "Iraq"] },
-  { id: "broadwith", name: "Broadwith", teams: ["Spain", "Mexico", "Algeria", "Cape Verde"] },
-  { id: "musker", name: "Musker", teams: ["Brazil", "Ecuador", "Norway", "Jordan", "New Zealand"] },
-  { id: "hine", name: "Hine", teams: ["Uruguay", "Switzerland", "Saudi Arabia", "Qatar", "Haiti", "South Africa"] },
-  { id: "jake", name: "Jake", teams: ["England", "Paraguay", "Australia", "Ghana"] },
-  { id: "ashish", name: "Ashish", teams: ["Morocco", "Japan", "Egypt", "Uzbekistan", "Curaçao"] },
-  { id: "daniel", name: "Daniel", teams: ["Belgium", "USA", "Ivory Coast", "Czech Republic"] },
-  { id: "aonghus", name: "Aonghus", teams: ["Netherlands", "Canada", "Turkey", "Bosnia"] },
-  { id: "oli-harris", name: "Ollie Harris", teams: ["Argentina", "Colombia", "Iran", "Panama"] },
-]
+// The players. Teams start empty and are filled in by the wheelspin results.
+export const PARTICIPANTS: Participant[] = FAMILY.map((f) => ({
+  id: f.id,
+  name: f.name,
+  teams: [],
+}))
 
-// Map team name -> owning participant id (built once).
-export const TEAM_OWNER: Record<string, string> = Object.fromEntries(
-  PARTICIPANTS.flatMap((p) => p.teams.map((t) => [t, p.id]))
-)
+// Rebuilt by refreshOwnership(). Reassigned (not mutated) so importers that read
+// these as live bindings always see the current ownership.
+export let TEAM_OWNER: Record<string, string> = {}
+export let TEAM_OWNER_NAME: Record<string, string> = {}
 
-// Map team name -> owning participant display name.
-export const TEAM_OWNER_NAME: Record<string, string> = Object.fromEntries(
-  PARTICIPANTS.flatMap((p) => p.teams.map((t) => [t, p.name]))
-)
+// Pull the latest wheelspin results from storage and rebuild ownership.
+export function refreshOwnership(): void {
+  const map = ownershipMap()
+  const byId = Object.fromEntries(PARTICIPANTS.map((p) => [p.id, p]))
+  for (const p of PARTICIPANTS) p.teams = []
+
+  const owner: Record<string, string> = {}
+  const ownerNameMap: Record<string, string> = {}
+  for (const [team, pid] of Object.entries(map)) {
+    const p = byId[pid]
+    if (!p) continue
+    p.teams.push(team)
+    owner[team] = pid
+    ownerNameMap[team] = p.name
+  }
+  TEAM_OWNER = owner
+  TEAM_OWNER_NAME = ownerNameMap
+}
 
 export function ownerName(team: string): string | undefined {
   return TEAM_OWNER_NAME[team]
 }
+
+// Build initial ownership from whatever is already stored.
+refreshOwnership()

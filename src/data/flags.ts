@@ -1,16 +1,24 @@
-// Flag emoji per drafted nation. Falls back to a white flag.
+// Flag emoji per nation in play. Falls back to a white flag.
 export const FLAGS: Record<string, string> = {
-  Portugal: "🇵🇹", Senegal: "🇸🇳", Sweden: "🇸🇪", Tunisia: "🇹🇳",
-  Germany: "🇩🇪", "South Korea": "🇰🇷", Austria: "🇦🇹", Congo: "🇨🇩",
-  France: "🇫🇷", Croatia: "🇭🇷", Scotland: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", Iraq: "🇮🇶",
-  Spain: "🇪🇸", Mexico: "🇲🇽", Algeria: "🇩🇿", "Cape Verde": "🇨🇻",
-  Brazil: "🇧🇷", Ecuador: "🇪🇨", Norway: "🇳🇴", Jordan: "🇯🇴", "New Zealand": "🇳🇿",
-  Uruguay: "🇺🇾", Switzerland: "🇨🇭", "Saudi Arabia": "🇸🇦", Qatar: "🇶🇦", Haiti: "🇭🇹", "South Africa": "🇿🇦",
-  England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", Paraguay: "🇵🇾", Australia: "🇦🇺", Ghana: "🇬🇭",
-  Morocco: "🇲🇦", Japan: "🇯🇵", Egypt: "🇪🇬", Uzbekistan: "🇺🇿", "Curaçao": "🇨🇼",
-  Belgium: "🇧🇪", USA: "🇺🇸", "Ivory Coast": "🇨🇮", "Czech Republic": "🇨🇿",
-  Netherlands: "🇳🇱", Canada: "🇨🇦", Turkey: "🇹🇷", Bosnia: "🇧🇦",
-  Argentina: "🇦🇷", Colombia: "🇨🇴", Iran: "🇮🇷", Panama: "🇵🇦",
+  // favourites
+  Spain: "🇪🇸", England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", France: "🇫🇷", Brazil: "🇧🇷",
+  // UEFA
+  Belgium: "🇧🇪", Croatia: "🇭🇷", "Czech Republic": "🇨🇿", Denmark: "🇩🇰",
+  Germany: "🇩🇪", Italy: "🇮🇹", Netherlands: "🇳🇱", Poland: "🇵🇱",
+  Portugal: "🇵🇹", Romania: "🇷🇴", Sweden: "🇸🇪", Ukraine: "🇺🇦",
+  // CONMEBOL
+  Argentina: "🇦🇷", Colombia: "🇨🇴", Ecuador: "🇪🇨", Paraguay: "🇵🇾", Uruguay: "🇺🇾",
+  // CONCACAF
+  Canada: "🇨🇦", "Costa Rica": "🇨🇷", Honduras: "🇭🇳", Jamaica: "🇯🇲",
+  Mexico: "🇲🇽", Panama: "🇵🇦", "United States": "🇺🇸",
+  // CAF
+  Algeria: "🇩🇿", Cameroon: "🇨🇲", Egypt: "🇪🇬", "Ivory Coast": "🇨🇮",
+  Morocco: "🇲🇦", Nigeria: "🇳🇬", Senegal: "🇸🇳", "South Africa": "🇿🇦", Tunisia: "🇹🇳",
+  // AFC
+  Australia: "🇦🇺", Iran: "🇮🇷", Iraq: "🇮🇶", Japan: "🇯🇵",
+  "Saudi Arabia": "🇸🇦", "South Korea": "🇰🇷", "United Arab Emirates": "🇦🇪", Uzbekistan: "🇺🇿",
+  // OFC
+  "New Zealand": "🇳🇿",
 }
 
 export const flagOf = (team: string) => FLAGS[team] || "🏳️"
