@@ -6,7 +6,7 @@ and the results drive a live points leaderboard.
 
 ## Wheelspin
 
-Two wheels on the **Wheelspin** tab (left menu):
+Two wheels on the **Wheelspin** tab (top tab bar):
 
 1. **The Favourites** — Spain, England, France, Brazil. Spin round the family so
    each player gets one.
