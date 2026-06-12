@@ -28,6 +28,7 @@ export interface Match {
   awayTeam: string
   homeScore: number | null
   awayScore: number | null
+  minute?: string | null // live clock from the ESPN overlay, e.g. "67'"
 }
 
 export interface TeamStats {
@@ -60,7 +61,31 @@ export interface Standing {
 }
 
 const FINISHED = new Set(["FINISHED", "AWARDED"])
-const LIVE = new Set(["IN_PLAY", "PAUSED"])
+export const LIVE_STATUSES = new Set(["IN_PLAY", "PAUSED"])
+const NOT_STARTED = new Set(["SCHEDULED", "TIMED"])
+
+// Presumed-live fallback: both data feeds can leave a match sitting on
+// TIMED/SCHEDULED well after kick-off. If the scheduled kick-off has passed,
+// treat the match as live for a window long enough to cover the game —
+// knockouts get an extra hour for extra time and penalties.
+const GROUP_LIVE_WINDOW_MS = 3 * 60 * 60 * 1000
+const KNOCKOUT_LIVE_WINDOW_MS = 4 * 60 * 60 * 1000
+
+export function isMatchLive(m: Match, now = Date.now()): boolean {
+  if (LIVE_STATUSES.has(m.status)) return true
+  if (!NOT_STARTED.has(m.status) || !m.utcDate) return false
+  const kickoff = Date.parse(m.utcDate)
+  if (Number.isNaN(kickoff)) return false
+  const windowMs =
+    m.stage === "GROUP_STAGE" ? GROUP_LIVE_WINDOW_MS : KNOCKOUT_LIVE_WINDOW_MS
+  return now >= kickoff && now - kickoff < windowMs
+}
+
+// Live only by presumption — kick-off has passed but no feed has confirmed
+// it. The UI shows "kicked off · score pending" instead of a fake 0-0.
+export function isPresumedLive(m: Match, now = Date.now()): boolean {
+  return !LIVE_STATUSES.has(m.status) && isMatchLive(m, now)
+}
 
 function emptyTeam(team: string): TeamStats {
   return {
@@ -151,7 +176,7 @@ export function computeStandings(matches: Match[]): Standing[] {
   const teamStats = computeTeamStats(matches)
   const liveTeams = new Set<string>()
   for (const m of matches) {
-    if (LIVE.has(m.status)) {
+    if (isMatchLive(m)) {
       liveTeams.add(m.homeTeam)
       liveTeams.add(m.awayTeam)
     }

@@ -3,7 +3,7 @@ import { useState } from "react"
 import { PARTICIPANTS, TEAM_OWNER, TEAM_OWNER_NAME, TOURNAMENT } from "@/data/draft"
 import { GROUPS } from "@/data/wheelspin"
 import { flagOf, initialsOf, colorOf, abbrOf } from "@/data/flags"
-import { POINTS, type Match, type Standing } from "@/lib/scoring"
+import { POINTS, isPresumedLive, type Match, type Standing } from "@/lib/scoring"
 import {
   type TeamRow, type Totals, STAGE_RANK,
   isLive, isFinished, isUpcoming,
@@ -124,7 +124,10 @@ function tickerItems(matches: Match[]): { tag: string; items: string[] } {
   const live = matches.filter(isLive).sort(byDate)
   const recent = matches.filter(isFinished).sort((a, b) => byDate(b, a)).slice(0, 8)
   const items = [
-    ...live.map((m) => `${score(m)} · <b>LIVE</b>`),
+    ...live.map((m) =>
+      isPresumedLive(m)
+        ? `${flagOf(m.homeTeam)} ${abbrOf(m.homeTeam)} v ${abbrOf(m.awayTeam)} ${flagOf(m.awayTeam)} · <b>KICKED OFF</b>`
+        : `${score(m)} · <b>LIVE${m.minute ? ` ${m.minute}` : ""}</b>`),
     ...recent.map((m) => `${score(m)}${impact(m)}`),
   ]
   if (items.length > 0) return { tag: live.length > 0 ? "LIVE" : "LATEST", items }
@@ -212,14 +215,19 @@ export function StandingsPage({ d }: { d: PageData }) {
 /* ════════ MATCH DAY ════════ */
 function MatchCard({ m }: { m: Match }) {
   const live = isLive(m), fin = isFinished(m)
+  // Kick-off has passed but no feed has confirmed the match yet — show it as
+  // live, but don't invent a 0-0.
+  const pending = live && isPresumedLive(m)
   const stat = live
-    ? <span className="stat live"><span className="pip" />LIVE</span>
+    ? pending
+      ? <span className="stat live"><span className="pip" />KICKED OFF · SCORE PENDING</span>
+      : <span className="stat live"><span className="pip" />LIVE{m.minute ? ` · ${m.minute}` : ""}</span>
     : fin
       ? <span className="stat ft">FULL TIME</span>
       : <span className="stat soon">{fmtTime(m.utcDate)}</span>
 
   const Side = ({ team, score, other }: { team: string; score: number | null; other: number | null }) => {
-    const dim = (fin || live) && score != null && other != null && score < other
+    const dim = (fin || live) && !pending && score != null && other != null && score < other
     return (
       <div className={dim ? "side dim" : "side"}>
         <span className="fl">{flagOf(team)}</span>
@@ -227,7 +235,7 @@ function MatchCard({ m }: { m: Match }) {
           <span className="tn">{team}</span>
           <OwnerLine team={team} />
         </div>
-        <span className="sc">{fin || live ? score ?? 0 : ""}</span>
+        <span className="sc">{fin || live ? (pending ? "–" : score ?? 0) : ""}</span>
       </div>
     )
   }
@@ -586,8 +594,9 @@ export function RulesPage(_: { d: PageData }) {
           </div>
           <div className="rule-card">
             <h3>Live data</h3>
-            <p>Scores come from <code>football-data.org</code>. A scheduled job refreshes results
-              every ~10 minutes on match days and the board re-polls every 60 seconds — no manual updates.</p>
+            <p>Results come from <code>football-data.org</code> via a scheduled job every ~10 minutes,
+              and the board re-polls every 60 seconds with a live overlay from ESPN's public scoreboard
+              for in-play minutes and instant full-time results — no manual updates.</p>
             <p>Teams were drafted on the <a href="#/wheelspin" style={{ textDecoration: "underline" }}>Wheelspin</a> —
               one favourite each, then a spin per group. No swaps, no refunds.</p>
           </div>

@@ -4,6 +4,7 @@ import { PARTICIPANTS, refreshOwnership } from "@/data/draft"
 import { WHEELSPIN_EVENT } from "@/data/wheelspin"
 import { WheelspinPage } from "@/wheelspin"
 import { computeStandings, type Match } from "@/lib/scoring"
+import { fetchLiveOverrides, applyLiveOverrides } from "@/lib/livescores"
 import {
   buildTeamRows, participantForm, knockoutCount, tournamentTotals,
 } from "@/lib/derive"
@@ -90,19 +91,27 @@ export default function App() {
     }
   }
 
+  // Baked matches as last fetched — kept separately from the merged state so
+  // the ESPN overlay can be re-applied even when one of the two fetches fails.
+  const bakedRef = React.useRef<Match[]>([])
+
   const load = React.useCallback(async () => {
     setLoading(true)
-    try {
-      const url = `${import.meta.env.BASE_URL}data/matches.json?t=${Date.now()}`
-      const res = await fetch(url, { cache: "no-store" })
-      const data: MatchesFile = await res.json()
-      setMatches(data.matches ?? [])
-      setUpdatedAt(data.updatedAt ?? null)
-    } catch {
-      /* keep last good data */
-    } finally {
-      setLoading(false)
+    const fetchBaked = async () => {
+      try {
+        const url = `${import.meta.env.BASE_URL}data/matches.json?t=${Date.now()}`
+        const res = await fetch(url, { cache: "no-store" })
+        const data: MatchesFile = await res.json()
+        bakedRef.current = data.matches ?? []
+        setUpdatedAt(data.updatedAt ?? null)
+      } catch {
+        /* keep last good baked data */
+      }
     }
+    // The two sources fail independently; fetchLiveOverrides never throws.
+    await Promise.all([fetchBaked(), fetchLiveOverrides()])
+    setMatches(applyLiveOverrides(bakedRef.current))
+    setLoading(false)
   }, [])
 
   React.useEffect(() => {
