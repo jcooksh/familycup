@@ -14,6 +14,7 @@
 }
 *{box-sizing:border-box;}
 html,body,#root{margin:0;padding:0;}
+html,body{overflow-x:hidden;max-width:100%;}
 body{background:var(--cream);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;line-height:1.45;}
 .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);}
 .num{font-variant-numeric:tabular-nums;}
@@ -362,6 +363,11 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;}
 @media(max-width:560px){
   .wrap{padding:0 16px 80px;}.nav-inner{padding:0 16px;}
   .hostflags{display:none;}
+  /* stack the bracket so it never scrolls sideways on a phone */
+  .bracket{grid-template-columns:1fr;overflow-x:visible;}
+  .bcol{min-width:0;}
+  /* let long display names wrap instead of forcing the page wider */
+  .who .nm,.nu-tn,.pod .nm,.pcard .top .nm,.tcard .tn{white-space:normal;overflow-wrap:anywhere;}
 }
 
 /* ============================================================
