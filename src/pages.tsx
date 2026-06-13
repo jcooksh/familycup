@@ -145,7 +145,12 @@ export function StandingsPage({ d }: { d: PageData }) {
   const podClass = ["gold", "teal", "coral"]
   const podWord = ["First place 👑", "Runner-up", "Third"]
   const ticker = tickerItems(matches)
-  const run = ticker.items.join('<span class="dot">◆</span>') + '<span class="dot">◆</span>'
+  // One scrolling copy must be at least as wide as the bar, or translating it
+  // -50% to loop exposes the dark background. Repeat the items until the copy is
+  // comfortably wide; the loop renders two of these copies back-to-back.
+  const block = ticker.items.join('<span class="dot">◆</span>') + '<span class="dot">◆</span>'
+  let run = block
+  while (run.length < 1600 && block.length > 0) run += block
 
   return (
     <>

@@ -5,6 +5,7 @@ import { WHEELSPIN_EVENT } from "@/data/wheelspin"
 import { WheelspinPage } from "@/wheelspin"
 import { computeStandings, type Match } from "@/lib/scoring"
 import { fetchLiveOverrides, applyLiveOverrides } from "@/lib/livescores"
+import { canonicalTeam } from "@/data/aliases"
 import {
   buildTeamRows, participantForm, knockoutCount, tournamentTotals,
 } from "@/lib/derive"
@@ -102,7 +103,13 @@ export default function App() {
         const url = `${import.meta.env.BASE_URL}data/matches.json?t=${Date.now()}`
         const res = await fetch(url, { cache: "no-store" })
         const data: MatchesFile = await res.json()
-        bakedRef.current = data.matches ?? []
+        // Normalise team names to canonical (e.g. "USA" -> "United States") so
+        // they join with wheelspin ownership and the ESPN live overlay.
+        bakedRef.current = (data.matches ?? []).map((m) => ({
+          ...m,
+          homeTeam: canonicalTeam(m.homeTeam),
+          awayTeam: canonicalTeam(m.awayTeam),
+        }))
         setUpdatedAt(data.updatedAt ?? null)
       } catch {
         /* keep last good baked data */
